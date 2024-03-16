@@ -1,0 +1,732 @@
+import math
+
+PRECISION = 3
+
+def fstr(v:float):
+    '''
+    custom conversion to string representation
+    '''
+    s = str(round(v,PRECISION))
+    return s[:-2] if s.endswith('.0') else s
+
+# number of spaces for indentation, -1 to disable whitespace
+WHITESPACE = 4
+def setwhitespace(i=4):
+    global WHITESPACE
+    WHITESPACE = i
+
+# prefix for class/id names
+PREFIX = ''
+def setprefix(s=''):
+    global PREFIX
+    PREFIX = s
+
+class vec:
+    ''' immutable 2d vector '''
+    def __init__(self,x=0.0,y=0.0):
+        self.x = float(x)
+        self.y = float(y)
+    def __repr__(self):
+        return f'vec({repr(self.x)},{repr(self.y)})'
+    def __str__(self):
+        return f'({self.x},{self.y})'
+    def __eq__(self,o):
+        return type(o) == type(self) and o.x == self.x and o.y == self.y
+    def __ne__(self,o):
+        return not (self == o)
+    def __hash__(self):
+        return hash((self.x,self.y))
+    def __bool__(self):
+        return abs(self.x) > 0.0 or abs(self.y) > 0.0
+    def __add__(self,o):
+        if type(o) != type(self):
+            raise ValueError('can only add(+) another vec')
+        return vec(self.x+o.x,self.y+o.y)
+    def __sub__(self,o):
+        if type(o) != type(self):
+            raise ValueError('can only sub(-) another vec')
+        return vec(self.x-o.x,self.y-o.y)
+    def __mul__(self,o):
+        return vec(self.x*o,self.y*o)
+    def __rmul__(self,o):
+        return self * o
+    def __truediv__(self,o):
+        return vec(self.x/o,self.y/o)
+    def __matmul__(self,o):
+        if type(o) != type(self):
+            raise ValueError('can only matmul(@) by another vec')
+        return self.x*o.x + self.y*o.y
+    def __neg__(self):
+        return vec(-self.x,-self.y)
+    def __pos__(self):
+        return self
+    def __abs__(self):
+        return math.hypot(self.x,self.y)
+    def rad(self):
+        return abs(self)
+    def radsq(self):
+        return self.x*self.x + self.y*self.y
+    def thetar(self):
+        return math.atan2(self.y,self.x)
+    def thetad(self):
+        return self.thetar()*180/math.pi
+    def rotater(self,a=0.0):
+        return vec.polarr(abs(self),self.thetar()+a)
+    def rotated(self,a=0.0):
+        return vec.polard(abs(self),self.thetad()+a)
+    def normalize(self):
+        return self/abs(self)
+    @staticmethod
+    def rect(x=0.0,y=0.0):
+        return vec(x,y)
+    @staticmethod
+    def polarr(r=0.0,t=0.0):
+        return vec(r*math.cos(t),r*math.sin(t))
+    @staticmethod
+    def polard(r=0.0,t=0.0):
+        return vec.polarr(r,t*math.pi/180)
+    @staticmethod
+    def convcomb(v1:'vec',v2:'vec',c:float):
+        return c*v1 + (1-c)*v2
+    @staticmethod
+    def midpoint(v1:'vec',v2:'vec'):
+        return vec.convcomb(v1,v2,0.5)
+    @staticmethod
+    def proj(a:'vec',b:'vec'):
+        return (a@b)*b/b.radsq()
+    @staticmethod
+    def angle(v1:'vec',v2:'vec'):
+        return math.acos((v1@v2)/(abs(v1)*abs(v2)))
+
+class linecap:
+    '''
+    type of ending for line strokes
+    butt = line drawn by flat brush
+    square = line drawn by square brush
+    round = line drawn by round brush
+    '''
+    butt = 'butt'
+    square = 'square'
+    round = 'round'
+
+class linejoin:
+    '''
+    type of joining between line segments
+    miter = square brush
+    round = round brush
+    bevel = angled transition
+    '''
+    miter = 'miter'
+    round = 'round'
+    bevel = 'bevel'
+
+class transform:
+    '''
+    base class for transformation types
+    '''
+
+class translate(transform):
+    def __init__(self,v:vec):
+        self.v = v
+    def __str__(self):
+        return f'translate({fstr(self.v.x)} {fstr(self.v.y)})'
+
+class rotate(transform):
+    def __init__(self,a=0.0):
+        self.a = a
+    def __str__(self):
+        return f'rotate({fstr(self.a)})'
+
+class skewx(transform):
+    def __init__(self,a=0.0):
+        self.a = a
+    def __str__(self):
+        return f'skewX({fstr(self.a)})'
+
+class skewy(transform):
+    def __init__(self,a=0.0):
+        self.a = a
+    def __str__(self):
+        return f'skewY({fstr(self.a)})'
+
+class scale(transform):
+    def __init__(self,v:vec=vec(1,1)):
+        self.v = v
+    def __str__(self):
+        if self.v.x == self.v.y:
+            return f'scale({fstr(self.v.x)})'
+        else:
+            return f'scale({fstr(self.v.x)} {fstr(self.v.y)})'
+
+class affine(transform):
+    '''
+    (x,y) -> (a*x+c*y+e,b*x+d*y+f)
+    '''
+    def __init__(self,a=1.0,b=0.0,c=0.0,d=1.0,e=0.0,f=0.0):
+        self.a = a
+        self.b = b
+        self.c = c
+        self.d = d
+        self.e = e
+        self.f = f
+    def __str__(self):
+        return f'matrix({fstr(self.a)} {fstr(self.b)} {fstr(self.c)} {fstr(self.d)} {fstr(self.e)} {fstr(self.f)})'
+
+class attrs:
+    '''
+    attribute information for svg drawings common to many elements
+    stroke = border color
+    fill = inner color
+    fill_opacity =
+    stroke_opacity =
+    stroke_linecap = see linecap class
+    stroke_linejoin = see linejoin class
+    stroke_dasharray = list that will be repeated for (draw, nodraw, ...)
+    transforms = list of transformations to apply
+    '''
+    def __init__(self,stroke='',stroke_width=0.0,fill='',fill_opacity=-1.0,stroke_opacity=-1.0,
+                 stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[float]=[],
+                 transforms:list[transform]=[],class_='',id='',font_size=''):
+        self._stroke = stroke
+        self._stroke_width = float(stroke_width)
+        self._fill = fill
+        self._fill_opacity = float(fill_opacity)
+        self._stroke_opacity = float(stroke_opacity)
+        self._stroke_linecap = stroke_linecap
+        self._stroke_linejoin = stroke_linejoin
+        self._stroke_dasharray = stroke_dasharray[:]
+        self._transforms = transforms[:]
+        self._class_ = class_
+        self._id = id
+        self._font_size = font_size
+    def __str__(self):
+        attrs = []
+        if self._id != '':
+            attrs.append(f'id="{PREFIX+self._id}"')
+        if self._stroke != '':
+            attrs.append(f'stroke="{self._stroke}"')
+        if self._stroke_width > 0:
+            attrs.append(f'stroke-width="{fstr(self._stroke_width)}"')
+        if self._fill != '':
+            attrs.append(f'fill="{self._fill}"')
+        if self._fill_opacity >= 0:
+            attrs.append(f'fill-opacity="{fstr(self._fill_opacity)}"')
+        if self._stroke_opacity >= 0:
+            attrs.append(f'stroke-opacity="{fstr(self._stroke_opacity)}"')
+        if self._stroke_linecap != '':
+            attrs.append(f'stroke-linecap="{self._stroke_linecap}"')
+        if self._stroke_linejoin != '':
+            attrs.append(f'stroke-linejoin="{self._stroke_linejoin}"')
+        if len(self._stroke_dasharray) > 0:
+            attrs.append(f"stroke-dasharray=\"{' '.join(map(str,self._stroke_dasharray))}\"")
+        if len(self._transforms) > 0:
+            attrs.append(f"transform=\"{' '.join(map(str,self._transforms))}\"")
+        if self._font_size != '':
+            attrs.append(f'font-size="{self._font_size}"')
+        if self._class_ != '':
+            attrs.append(f'class="{PREFIX+self._class_}"')
+        return ' '.join(attrs)
+    def stroke(self,s:str):
+        ret = self; ret._stroke = s; return ret
+    def stroke_width(self,f:float):
+        ret = self; ret._stroke_width = f; return ret
+    def fill(self,s:str):
+        ret = self; ret._fill = s; return ret
+    def fill_opacity(self,f:float):
+        ret = self; ret._fill_opacity = f; return ret
+    def stroke_opacity(self,f:float):
+        ret = self; ret._stroke_opacity = f; return ret
+    def stroke_linecap(self,s:str):
+        ret = self; ret._stroke_linecap = s; return ret
+    def stroke_linejoin(self,s:str):
+        ret = self; ret._stroke_linejoin = s; return ret
+    def stroke_dasharray(self,l:list[float]):
+        ret = self; ret._stroke_dasharray = l[:]; return ret
+    def transforms(self,l:list[transform]):
+        ret = self; ret._transforms = l[:]; return ret
+    def class_(self,s:str):
+        ret = self; ret._class_ = s; return ret
+    def id(self,s:str):
+        ret = self; ret._id = s; return ret
+    def font_size(self,s:str):
+        ret = self; ret._font_size = s; return ret
+
+class svgelem:
+    '''
+    base class for svg elements
+    __str__ must return xml tag representation
+    '''
+
+class comment(svgelem):
+    '''
+    xml/html comment
+    '''
+    def __init__(self,text='',multiline=False):
+        self.text = text
+        self.multiline = multiline
+    def __str__(self):
+        if WHITESPACE < 0:
+            return ''
+        if self.multiline:
+            return f'<!--\n{self.text}\n-->'
+        else:
+            return f'<!-- {self.text} -->'
+
+class group(svgelem):
+    '''
+    group svg elements to apply properties to many
+    '''
+    def __init__(self,elems:list[svgelem]=[],attrs_=attrs()):
+        self.elems = elems[:]
+        self.attrs = attrs_
+    def __str__(self):
+        attrs_ = str(self.attrs)
+        inner = ''
+        ws = lambda i : '' if WHITESPACE < 0 else '\n' + ' '*(i*WHITESPACE)
+        ws2 = lambda i : '' if WHITESPACE < 0 else ' '*(i*WHITESPACE)
+        for e in self.elems:
+            inner += ws(0)
+            inner += ws(0).join(ws2(1)+l for l in str(e).splitlines())
+        inner += ws(0)
+        return f'<g{" " if attrs_ != "" else ""}{attrs_}>{inner}</g>'
+    def append(self,e:svgelem):
+        self.elems.append(e)
+    def __iadd__(self,e:svgelem):
+        self.elems.append(e)
+        return self
+
+class rect(svgelem):
+    '''
+    svg rectangle
+    v1 = top left corner
+    v2 = bottom right corner
+    rx = x radius for corners
+    ry = y radius for corners
+    '''
+    def __init__(self,v1:vec,v2:vec,rx=0.0,ry=0.0,attrs_=attrs()):
+        self.v1 = v1
+        self.v2 = v2
+        self.rx = float(rx)
+        self.ry = float(ry)
+        self.attrs = attrs_
+    def __str__(self):
+        w = self.v2.x - self.v1.x
+        h = self.v2.y - self.v1.y
+        ret = f'<rect x="{fstr(self.v1.x)}" y="{fstr(self.v1.y)}" width="{fstr(w)}" height="{fstr(h)}"'
+        if self.rx > 0: ret += f' rx="{fstr(self.rx)}"'
+        if self.ry > 0: ret += f' ry="{fstr(self.ry)}"'
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class circle(svgelem):
+    '''
+    svg circle
+    c = center
+    r = radius
+    '''
+    def __init__(self,c:vec,r:float,attrs_=attrs()):
+        self.c = c
+        self.r = float(r)
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f'<circle cx="{fstr(self.c.x)}" cy="{fstr(self.c.y)}" r="{fstr(self.r)}"'
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class ellipse(svgelem):
+    '''
+    svg ellipse
+    c = center
+    r = radii
+    '''
+    def __init__(self,c:vec,r:vec,attrs_=attrs()):
+        self.c = c
+        self.r = r
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f'<ellipse cx="{fstr(self.c.x)}" cy="{fstr(self.c.y)}" rx="{fstr(self.r.x)}" ry="{fstr(self.r.y)}"'
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class line(svgelem):
+    '''
+    svg line
+    v1 = first point
+    v2 = second point
+    '''
+    def __init__(self,v1:vec,v2:vec,attrs_=attrs()):
+        self.v1 = v1
+        self.v2 = v2
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f'<line x1="{fstr(self.v1.x)}" x2="{fstr(self.v2.x)}" y1="{fstr(self.v1.y)}" y2="{fstr(self.v2.y)}"'
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class polyline(svgelem):
+    '''
+    svg polyline
+    points = list of points to connect
+    '''
+    def __init__(self,points:list[vec]=[],attrs_=attrs()):
+        self.points = points[:]
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f"<polyline points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class polygon(svgelem):
+    '''
+    svg polygon
+    points = list of points to connect
+    '''
+    def __init__(self,points:list[vec]=[],attrs_=attrs()):
+        self.points = points[:]
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f"<polygon points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+
+class text(svgelem):
+    '''
+    svg text
+    '''
+    def __init__(self,text_='',pos=vec(),attrs_=attrs()):
+        self.text = text_
+        self.pos = pos
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f'<text x="{fstr(self.pos.x)}" y="{fstr(self.pos.y)}"'
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + f'>{self.text}</text>'
+
+class path(svgelem):
+    '''
+    svg path
+    '''
+    def __init__(self,d:list['path.pathelem']=[],attrs_=attrs()):
+        self.d = d[:]
+        self.attrs = attrs_
+    def __str__(self):
+        ret = f"<path d=\"{' '.join(map(str,self.d))}\""
+        attrs_ = str(self.attrs)
+        if attrs_ != '':
+            ret += ' ' + attrs_
+        return ret + ' />'
+    def append(self,e:'pathelem'):
+        self.d.append(e)
+    def __iadd__(self,e:'pathelem'):
+        self.d.append(e)
+        return self
+
+    class pathelem:
+        '''
+        base class for svg path instructions
+        '''
+
+    class M(pathelem):
+        '''
+        move to (absolute)
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f'M {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class m(pathelem):
+        '''
+        move to (relative)
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f'm {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class L(pathelem):
+        '''
+        line to (absolute)
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f'L {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class l(pathelem):
+        '''
+        line to (relative)
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f'l {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class H(pathelem):
+        '''
+        horizontal line to (absolute)
+        '''
+        def __init__(self,x=0.0):
+            self.x = float(x)
+        def __str__(self):
+            return f'H {fstr(self.x)}'
+
+    class h(pathelem):
+        '''
+        horizontal line to (relative)
+        '''
+        def __init__(self,dx=0.0):
+            self.dx = float(dx)
+        def __str__(self):
+            return f'h {fstr(self.dx)}'
+
+    class V(pathelem):
+        '''
+        vertical line to (absolute)
+        '''
+        def __init__(self,y=0.0):
+            self.y = float(y)
+        def __str__(self):
+            return f'V {fstr(self.y)}'
+
+    class v(pathelem):
+        '''
+        vertical line to (relative)
+        '''
+        def __init__(self,dy=0.0):
+            self.dy = float(dy)
+        def __str__(self):
+            return f'v {fstr(self.dy)}'
+
+    class Z(pathelem):
+        '''
+        close path
+        '''
+        def __init__(self):
+            pass
+        def __str__(self):
+            return 'Z'
+
+    class z(pathelem):
+        '''
+        close path
+        '''
+        def __init__(self):
+            pass
+        def __str__(self):
+            return 'z'
+
+    class C(pathelem):
+        '''
+        cubic bezier curve (absolute)
+        v1 = control 1
+        v2 = control 2
+        v = end
+        '''
+        def __init__(self,v1:vec=vec(),v2:vec=vec(),v:vec=vec()):
+            self.v1 = v1
+            self.v2 = v2
+            self.v = v
+        def __str__(self):
+            return f'C {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class c(pathelem):
+        '''
+        cubic bezier curve (relative)
+        v1 = control 1
+        v2 = control 2
+        v = end
+        '''
+        def __init__(self,v1:vec=vec(),v2:vec=vec(),v:vec=vec()):
+            self.v1 = v1
+            self.v2 = v2
+            self.v = v
+        def __str__(self):
+            return f'c {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class S(pathelem):
+        '''
+        cubic bezier curve with implied control (absolute)
+        - implied control is reflection of previous control
+          if previous command is S or C, otherwise cursor position
+        v2 = control 2
+        v = end
+        '''
+        def __init__(self,v2:vec=vec(),v:vec=vec()):
+            self.v2 = v2
+            self.v = v
+        def __str__(self):
+            return f'S {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class s(pathelem):
+        '''
+        cubic bezier curve with implied control (relative)
+        - implied control is reflection of previous control
+          if previous command is s or c, otherwise cursor position
+        v2 = control 2
+        v = end
+        '''
+        def __init__(self,v2:vec=vec(),v:vec=vec()):
+            self.v2 = v2
+            self.v = v
+        def __str__(self):
+            return f'S {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class Q(pathelem):
+        '''
+        quadratic bezier curve (absolute)
+        v1 = control
+        v = end
+        '''
+        def __init__(self,v1:vec=vec(),v:vec=vec()):
+            self.v1 = v1
+            self.v = v
+        def __str__(self):
+            return f'Q {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class q(pathelem):
+        '''
+        quadratic bezier curve (relative)
+        v1 = control
+        v = end
+        '''
+        def __init__(self,v1:vec=vec(),v:vec=vec()):
+            self.v1 = v1
+            self.v = v
+        def __str__(self):
+            return f'q {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class T(pathelem):
+        '''
+        quadratic bezier curve with implied control (absolute)
+        - implied control is reflection of previous control
+          if previous command is Q or T, otherwise cursor position
+        v = end
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f'T {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class t(pathelem):
+        '''
+        quadratic bezier curve with implied control (relative)
+        - implied control is reflection of previous control
+          if previous command is q or t, otherwise cursor position
+        v = end
+        '''
+        def __init__(self,v:vec=vec()):
+            self.v = v
+        def __str__(self):
+            return f't {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class A(pathelem):
+        '''
+        arc (absolute)
+        r = radii
+        rot = rotation (degrees)
+        laflag = large arc flag (>180 degrees arc)
+        sweep = sweep flag (use ellipse on counterclockwise side)
+        v = endpoint
+        '''
+        def __init__(self,r:vec=vec(),v:vec=vec(),rot=0.0,laflag=False,sweep=False):
+            self.r = r
+            self.rot = float(rot)
+            self.laflag = laflag
+            self.sweep = sweep
+            self.v = v
+        def __str__(self):
+            return f'A {fstr(self.r.x)} {fstr(self.r.y)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+    class a(pathelem):
+        '''
+        arc (relative)
+        r = radii
+        rot = rotation (degrees)
+        laflag = large arc flag (>180 degrees arc)
+        sweep = sweep flag (use ellipse on counterclockwise side)
+        v = endpoint
+        '''
+        def __init__(self,r:vec=vec(),v:vec=vec(),rot=0.0,laflag=False,sweep=False):
+            self.r = r
+            self.rot = float(rot)
+            self.laflag = laflag
+            self.sweep = sweep
+            self.v = v
+        def __str__(self):
+            return f'a {fstr(self.r.x)} {fstr(self.r.y)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+class cssstyle:
+    ''' base class '''
+class cssid(cssstyle):
+    def __init__(self,id:str,s:str):
+        self.id = id
+        self.s = s
+    def __str__(self):
+        return f'#{PREFIX + self.id} {{ {self.s} }}'
+class cssclass(cssstyle):
+    def __init__(self,c:str,s:str):
+        self.c = c
+        self.s = s
+    def __str__(self):
+        return f'.{PREFIX + self.c} {{ {self.s} }}'
+
+class cssstyles(svgelem):
+    '''
+    css styles for embedding in svg
+    '''
+    def __init__(self,css:list[cssstyle]=[]):
+        self.css = css
+    def __str__(self):
+        ws = lambda i : '' if WHITESPACE < 0 else '\n' + ' '*(i*WHITESPACE)
+        #ws2 = lambda i : '' if WHITESPACE < 0 else ' '*(i*WHITESPACE)
+        ret = '<style>'
+        for css in self.css:
+            ret += ws(1) + str(css)
+        return ret + '\n</style>'
+
+class svgimage:
+    xmlns = 'http://www.w3.org/2000/svg'
+    version = '1.1'
+    def __init__(self,c1=vec(),c2=vec(100,100),width=200,height=200):
+        self.vb1 = c1
+        self.vb2 = c2
+        self.width = width
+        self.height = height
+        self.elems: list[svgelem] = []
+    def append(self,e:svgelem):
+        self.elems.append(e)
+    def __iadd__(self,e:svgelem):
+        self.elems.append(e)
+        return self
+    def __str__(self):
+        vbw = self.vb2.x - self.vb1.x
+        vbh = self.vb2.y - self.vb1.y
+        ret = f'<svg version="{svgimage.version}" xmlns="{svgimage.xmlns}"'\
+            f' viewBox="{fstr(self.vb1.x)} {fstr(self.vb1.y)} {fstr(vbw)} {fstr(vbh)}"'
+        if self.width >= 0 and self.height >= 0:
+            ret += f' width="{self.width}" height="{self.height}"'
+        ret += '>'
+        ws = lambda i : '' if WHITESPACE < 0 else '\n' + ' '*(i*WHITESPACE)
+        ws2 = lambda i : '' if WHITESPACE < 0 else ' '*(i*WHITESPACE)
+        for e in self.elems:
+            ret += ws(0)
+            ret += ws(0).join(ws2(1)+l for l in str(e).splitlines())
+        return ret + ws(0) + '</svg>'
+
+if __name__ == '__main__':
+    pass
