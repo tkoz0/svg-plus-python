@@ -17,7 +17,7 @@ svg = svgimage(vec(-1,-6),vec(5,1),210,245)
 vertices = [vec(0,0),vec(0,-3),vec(2,-4.5),vec(4,-3),vec(4,0)]
 svg += polygon(vertices,attrs(stroke='black',stroke_width=0.05,fill='lightblue'))
 for v in vertices:
-    svg += circle(v,0.15,attrs(fill='black'))
+    svg += circle(0.15,v,attrs=attrs(fill='black'))
 axes = [
     path.M(vec(-0.5,0)),
     path.L(vec(4.5,0)),
@@ -39,8 +39,8 @@ for i in range(1,6):
     axisnums += text(str(i),vec(-0.5,0.15-i))
 svg += path(axes,attrs(stroke='black',stroke_width=0.05,fill='none'))
 svg += axisnums
-svg += text('x',vec(1.5,-1.5),attrs(font_size='0.12em'))
-svg += text('(2,4.5)',vec(1,-5),attrs(font_size='0.05em'))
+svg += text('x',1.5,-1.5,attrs(font_size='0.12em'))
+svg += text('(2,4.5)',1,-5,attrs(font_size='0.05em'))
 
 svgstrlist.append(str(svg))
 

@@ -2,6 +2,7 @@ from .svg import *
 
 __all__ = \
 [
+    'setprecision',
     'setwhitespace',
     'setprefix',
     'vec',
@@ -25,7 +26,9 @@ __all__ = \
     'polyline',
     'polygon',
     'text',
+    'pathelem',
     'path',
+    'pathseq',
     'cssid',
     'cssclass',
     'cssstyles',

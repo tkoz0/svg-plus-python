@@ -1,6 +1,16 @@
+'''
+SVGPP - SVG + Python
+version 1
+within version 1, try to maintain backward compatibility
+'''
+
 import math
 
 PRECISION = 3
+def setprecision(p=3):
+    ''' maximum number of digits after decimal place '''
+    global PRECISION
+    PRECISION = p
 
 def fstr(v:float):
     '''
@@ -9,15 +19,15 @@ def fstr(v:float):
     s = str(round(v,PRECISION))
     return s[:-2] if s.endswith('.0') else s
 
-# number of spaces for indentation, -1 to disable whitespace
 WHITESPACE = 4
 def setwhitespace(i=4):
+    ''' number of spaces for indentation, -1 to disable whitespace '''
     global WHITESPACE
     WHITESPACE = i
 
-# prefix for class/id names
 PREFIX = ''
 def setprefix(s=''):
+    ''' prefix for class/id names '''
     global PREFIX
     PREFIX = s
 
@@ -98,6 +108,36 @@ class vec:
     def angle(v1:'vec',v2:'vec'):
         return math.acos((v1@v2)/(abs(v1)*abs(v2)))
 
+pvf = vec|float|int
+pnf = None|float|int
+pfi = float|int
+
+def parsevec1(a:pvf,b:pnf=None) -> vec:
+    if isinstance(a,vec):
+        return a
+    elif isinstance(a,pfi) and isinstance(b,pfi):
+        return vec(a,b)
+    else:
+        raise ValueError()
+
+def parsevec2(a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+    if isinstance(a,vec) and isinstance(b,vec):
+        return a,b
+    elif isinstance(a,pfi) and isinstance(b,pfi) \
+        and isinstance(c,pfi) and isinstance(d,pfi):
+        return vec(a,b),vec(c,d)
+    else:
+        raise ValueError()
+
+def parsevec3(a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
+    if isinstance(a,vec) and isinstance(b,vec) and isinstance(c,vec):
+        return a,b,c
+    elif isinstance(a,pfi) and isinstance(b,pfi) and isinstance(c,pfi) \
+        and isinstance(d,pfi) and isinstance(e,pfi) and isinstance(f,pfi):
+        return vec(a,b),vec(c,d),vec(e,f)
+    else:
+        raise ValueError()
+
 class linecap:
     '''
     type of ending for line strokes
@@ -126,8 +166,8 @@ class transform:
     '''
 
 class translate(transform):
-    def __init__(self,v:vec):
-        self.v = v
+    def __init__(self,a:pvf,b:pnf=None):
+        self.v = parsevec1(a,b)
     def __str__(self):
         return f'translate({fstr(self.v.x)} {fstr(self.v.y)})'
 
@@ -150,8 +190,13 @@ class skewy(transform):
         return f'skewY({fstr(self.a)})'
 
 class scale(transform):
-    def __init__(self,v:vec=vec(1,1)):
-        self.v = v
+    def __init__(self,a:pvf,b:pnf=None):
+        if isinstance(a,vec):
+            self.v = a
+        elif b is None:
+            self.v = vec(a,a)
+        else:
+            self.v = vec(a,b)
     def __str__(self):
         if self.v.x == self.v.y:
             return f'scale({fstr(self.v.x)})'
@@ -276,9 +321,9 @@ class group(svgelem):
     '''
     group svg elements to apply properties to many
     '''
-    def __init__(self,elems:list[svgelem]=[],attrs_=attrs()):
+    def __init__(self,elems:list[svgelem]=[],attrs=attrs()):
         self.elems = elems[:]
-        self.attrs = attrs_
+        self.attrs = attrs
     def __str__(self):
         attrs_ = str(self.attrs)
         inner = ''
@@ -300,21 +345,18 @@ class rect(svgelem):
     svg rectangle
     v1 = top left corner
     v2 = bottom right corner
-    rx = x radius for corners
-    ry = y radius for corners
+    rx,ry = radius for rounded corners
     '''
-    def __init__(self,v1:vec,v2:vec,rx=0.0,ry=0.0,attrs_=attrs()):
-        self.v1 = v1
-        self.v2 = v2
-        self.rx = float(rx)
-        self.ry = float(ry)
-        self.attrs = attrs_
+    def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None,rx=0.0,ry=0.0,attrs=attrs()):
+        self.v1,self.v2 = parsevec2(a,b,c,d)
+        self.rx,self.ry = float(rx),float(ry)
+        self.attrs = attrs
     def __str__(self):
         w = self.v2.x - self.v1.x
         h = self.v2.y - self.v1.y
         ret = f'<rect x="{fstr(self.v1.x)}" y="{fstr(self.v1.y)}" width="{fstr(w)}" height="{fstr(h)}"'
         if self.rx > 0: ret += f' rx="{fstr(self.rx)}"'
-        if self.ry > 0: ret += f' ry="{fstr(self.ry)}"'
+        if self.rx > 0: ret += f' ry="{fstr(self.ry)}"'
         attrs_ = str(self.attrs)
         if attrs_ != '':
             ret += ' ' + attrs_
@@ -326,10 +368,10 @@ class circle(svgelem):
     c = center
     r = radius
     '''
-    def __init__(self,c:vec,r:float,attrs_=attrs()):
-        self.c = c
+    def __init__(self,r:float,a:pvf,b:pnf=None,attrs=attrs()):
+        self.c = parsevec1(a,b)
         self.r = float(r)
-        self.attrs = attrs_
+        self.attrs = attrs
     def __str__(self):
         ret = f'<circle cx="{fstr(self.c.x)}" cy="{fstr(self.c.y)}" r="{fstr(self.r)}"'
         attrs_ = str(self.attrs)
@@ -343,12 +385,12 @@ class ellipse(svgelem):
     c = center
     r = radii
     '''
-    def __init__(self,c:vec,r:vec,attrs_=attrs()):
-        self.c = c
-        self.r = r
-        self.attrs = attrs_
+    def __init__(self,rx:float,ry:float,a:pvf,b:pnf=None,attrs=attrs()):
+        self.c = parsevec1(a,b)
+        self.rx,self.ry = float(rx),float(ry)
+        self.attrs = attrs
     def __str__(self):
-        ret = f'<ellipse cx="{fstr(self.c.x)}" cy="{fstr(self.c.y)}" rx="{fstr(self.r.x)}" ry="{fstr(self.r.y)}"'
+        ret = f'<ellipse cx="{fstr(self.c.x)}" cy="{fstr(self.c.y)}" rx="{fstr(self.rx)}" ry="{fstr(self.ry)}"'
         attrs_ = str(self.attrs)
         if attrs_ != '':
             ret += ' ' + attrs_
@@ -360,10 +402,9 @@ class line(svgelem):
     v1 = first point
     v2 = second point
     '''
-    def __init__(self,v1:vec,v2:vec,attrs_=attrs()):
-        self.v1 = v1
-        self.v2 = v2
-        self.attrs = attrs_
+    def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None,attrs=attrs()):
+        self.v1,self.v2 = parsevec2(a,b,c,d)
+        self.attrs = attrs
     def __str__(self):
         ret = f'<line x1="{fstr(self.v1.x)}" x2="{fstr(self.v2.x)}" y1="{fstr(self.v1.y)}" y2="{fstr(self.v2.y)}"'
         attrs_ = str(self.attrs)
@@ -376,9 +417,9 @@ class polyline(svgelem):
     svg polyline
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]=[],attrs_=attrs()):
+    def __init__(self,points:list[vec]=[],attrs=attrs()):
         self.points = points[:]
-        self.attrs = attrs_
+        self.attrs = attrs
     def __str__(self):
         ret = f"<polyline points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
         attrs_ = str(self.attrs)
@@ -391,9 +432,9 @@ class polygon(svgelem):
     svg polygon
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]=[],attrs_=attrs()):
+    def __init__(self,points:list[vec]=[],attrs=attrs()):
         self.points = points[:]
-        self.attrs = attrs_
+        self.attrs = attrs
     def __str__(self):
         ret = f"<polygon points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
         attrs_ = str(self.attrs)
@@ -405,10 +446,10 @@ class text(svgelem):
     '''
     svg text
     '''
-    def __init__(self,text_='',pos=vec(),attrs_=attrs()):
-        self.text = text_
-        self.pos = pos
-        self.attrs = attrs_
+    def __init__(self,text:str,a:pvf,b:pnf=None,attrs=attrs()):
+        self.text = text
+        self.pos = parsevec1(a,b)
+        self.attrs = attrs
     def __str__(self):
         ret = f'<text x="{fstr(self.pos.x)}" y="{fstr(self.pos.y)}"'
         attrs_ = str(self.attrs)
@@ -416,13 +457,18 @@ class text(svgelem):
             ret += ' ' + attrs_
         return ret + f'>{self.text}</text>'
 
+class pathelem:
+    '''
+    base class for svg path instructions
+    '''
+
 class path(svgelem):
     '''
     svg path
     '''
-    def __init__(self,d:list['path.pathelem']=[],attrs_=attrs()):
-        self.d = d[:]
-        self.attrs = attrs_
+    def __init__(self,d:'list[pathelem]|pathelem'=[],attrs=attrs()):
+        self.d = d[:] if isinstance(d,list) else [d]
+        self.attrs = attrs
     def __str__(self):
         ret = f"<path d=\"{' '.join(map(str,self.d))}\""
         attrs_ = str(self.attrs)
@@ -435,17 +481,12 @@ class path(svgelem):
         self.d.append(e)
         return self
 
-    class pathelem:
-        '''
-        base class for svg path instructions
-        '''
-
     class M(pathelem):
         '''
         move to (absolute)
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f'M {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -453,8 +494,8 @@ class path(svgelem):
         '''
         move to (relative)
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f'm {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -462,8 +503,8 @@ class path(svgelem):
         '''
         line to (absolute)
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f'L {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -471,8 +512,8 @@ class path(svgelem):
         '''
         line to (relative)
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f'l {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -537,10 +578,8 @@ class path(svgelem):
         v2 = control 2
         v = end
         '''
-        def __init__(self,v1:vec=vec(),v2:vec=vec(),v:vec=vec()):
-            self.v1 = v1
-            self.v2 = v2
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
+            self.v1,self.v2,self.v = parsevec3(a,b,c,d,e,f)
         def __str__(self):
             return f'C {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -551,10 +590,8 @@ class path(svgelem):
         v2 = control 2
         v = end
         '''
-        def __init__(self,v1:vec=vec(),v2:vec=vec(),v:vec=vec()):
-            self.v1 = v1
-            self.v2 = v2
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
+            self.v1,self.v2,self.v = parsevec3(a,b,c,d,e,f)
         def __str__(self):
             return f'c {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -566,9 +603,8 @@ class path(svgelem):
         v2 = control 2
         v = end
         '''
-        def __init__(self,v2:vec=vec(),v:vec=vec()):
-            self.v2 = v2
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+            self.v2,self.v = parsevec2(a,b,c,d)
         def __str__(self):
             return f'S {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -580,9 +616,8 @@ class path(svgelem):
         v2 = control 2
         v = end
         '''
-        def __init__(self,v2:vec=vec(),v:vec=vec()):
-            self.v2 = v2
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+            self.v2,self.v = parsevec2(a,b,c,d)
         def __str__(self):
             return f'S {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -592,9 +627,8 @@ class path(svgelem):
         v1 = control
         v = end
         '''
-        def __init__(self,v1:vec=vec(),v:vec=vec()):
-            self.v1 = v1
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+            self.v1,self.v = parsevec2(a,b,c,d)
         def __str__(self):
             return f'Q {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -604,9 +638,8 @@ class path(svgelem):
         v1 = control
         v = end
         '''
-        def __init__(self,v1:vec=vec(),v:vec=vec()):
-            self.v1 = v1
-            self.v = v
+        def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+            self.v1,self.v = parsevec2(a,b,c,d)
         def __str__(self):
             return f'q {fstr(self.v1.x)} {fstr(self.v1.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -617,8 +650,8 @@ class path(svgelem):
           if previous command is Q or T, otherwise cursor position
         v = end
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f'T {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -629,28 +662,28 @@ class path(svgelem):
           if previous command is q or t, otherwise cursor position
         v = end
         '''
-        def __init__(self,v:vec=vec()):
-            self.v = v
+        def __init__(self,a:pvf,b:pnf=None):
+            self.v = parsevec1(a,b)
         def __str__(self):
             return f't {fstr(self.v.x)} {fstr(self.v.y)}'
 
     class A(pathelem):
         '''
         arc (absolute)
-        r = radii
+        rx,ry = radii
         rot = rotation (degrees)
         laflag = large arc flag (>180 degrees arc)
         sweep = sweep flag (use ellipse on counterclockwise side)
         v = endpoint
         '''
-        def __init__(self,r:vec=vec(),v:vec=vec(),rot=0.0,laflag=False,sweep=False):
-            self.r = r
+        def __init__(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+            self.rx,self.ry = float(rx),float(ry)
             self.rot = float(rot)
             self.laflag = laflag
             self.sweep = sweep
             self.v = v
         def __str__(self):
-            return f'A {fstr(self.r.x)} {fstr(self.r.y)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
+            return f'A {fstr(self.rx)} {fstr(self.ry)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
     class a(pathelem):
         '''
@@ -661,23 +694,101 @@ class path(svgelem):
         sweep = sweep flag (use ellipse on counterclockwise side)
         v = endpoint
         '''
-        def __init__(self,r:vec=vec(),v:vec=vec(),rot=0.0,laflag=False,sweep=False):
-            self.r = r
+        def __init__(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+            self.rx,self.ry = float(rx),float(ry)
             self.rot = float(rot)
             self.laflag = laflag
             self.sweep = sweep
             self.v = v
         def __str__(self):
-            return f'a {fstr(self.r.x)} {fstr(self.r.y)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
+            return f'a {fstr(self.rx)} {fstr(self.ry)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
+
+class pathseq(pathelem):
+    '''
+    path sequencer using . notation (function calls) to append instructions
+    instances are immmutable
+    '''
+    def __init__(self,path_:list[pathelem]=[]):
+        self.path = path_
+    def __str__(self):
+        return ' '.join(map(str,self.path))
+    def join(self,o:pathelem):
+        ''' concatenate path with more instructions '''
+        if type(o) == type(self):
+            return pathseq(self.path+o.path)
+        else:
+            return pathseq(self.path+[o])
+    def M(self,a:pvf,b:pnf=None):
+        ''' move to (absolute) '''
+        return pathseq(self.path+[path.M(a,b)])
+    def m(self,a:pvf,b:pnf=None):
+        ''' move to (relative) '''
+        return pathseq(self.path+[path.m(a,b)])
+    def L(self,a:pvf,b:pnf=None):
+        ''' line to (absolute) '''
+        return pathseq(self.path+[path.L(a,b)])
+    def l(self,a:pvf,b:pnf=None):
+        ''' line to (relative) '''
+        return pathseq(self.path+[path.l(a,b)])
+    def H(self,x:float):
+        ''' horizontal line to (absolute) '''
+        return pathseq(self.path+[path.H(x)])
+    def h(self,dx:float):
+        ''' horizontal line to (relative) '''
+        return pathseq(self.path+[path.h(dx)])
+    def V(self,y:float):
+        ''' vertical line to (absolute) '''
+        return pathseq(self.path+[path.V(y)])
+    def v(self,dy:float):
+        ''' vertical line to (relative) '''
+        return pathseq(self.path+[path.v(dy)])
+    def Z(self):
+        ''' close path '''
+        return pathseq(self.path+[path.Z()])
+    def z(self):
+        ''' close path '''
+        return pathseq(self.path+[path.z()])
+    def C(self,a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
+        ''' cubic bezier curve (absolute) '''
+        return pathseq(self.path+[path.C(a,b,c,d,e,f)])
+    def c(self,a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
+        ''' cubic bezier curve (relative) '''
+        return pathseq(self.path+[path.c(a,b,c,d,e,f)])
+    def S(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+        ''' cubic bezier curve with implied control (absolute) '''
+        return pathseq(self.path+[path.S(a,b,c,d)])
+    def s(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+        ''' cubic bezier curve with implied control (relative) '''
+        return pathseq(self.path+[path.s(a,b,c,d)])
+    def Q(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+        ''' quadratic bezier curve (absolute) '''
+        return pathseq(self.path+[path.Q(a,b,c,d)])
+    def q(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
+        ''' quadratic bezier curve (relative) '''
+        return pathseq(self.path+[path.q(a,b,c,d)])
+    def T(self,a:pvf,b:pnf=None):
+        ''' quadratic bezier curve with implied control (absolute) '''
+        return pathseq(self.path+[path.T(a,b)])
+    def t(self,a:pvf,b:pnf=None):
+        ''' quadratic bezier curve with implied control (relative) '''
+        return pathseq(self.path+[path.t(a,b)])
+    def A(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+        ''' arc (absolute) '''
+        return pathseq(self.path+[path.A(v,rx,ry,rot,sweep,laflag)])
+    def a(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+        ''' arc (relative) '''
+        return pathseq(self.path+[path.a(v,rx,ry,rot,sweep,laflag)])
 
 class cssstyle:
     ''' base class '''
+
 class cssid(cssstyle):
     def __init__(self,id:str,s:str):
         self.id = id
         self.s = s
     def __str__(self):
         return f'#{PREFIX + self.id} {{ {self.s} }}'
+
 class cssclass(cssstyle):
     def __init__(self,c:str,s:str):
         self.c = c
