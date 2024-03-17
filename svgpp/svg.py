@@ -232,7 +232,7 @@ class attrs:
     '''
     def __init__(self,stroke='',stroke_width=0.0,fill='',fill_opacity=-1.0,stroke_opacity=-1.0,
                  stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[float]=[],
-                 transforms:list[transform]=[],class_='',id='',font_size=''):
+                 transforms:list[transform]=[],class_='',id='',font_size='',font_family=''):
         self._stroke = stroke
         self._stroke_width = float(stroke_width)
         self._fill = fill
@@ -245,6 +245,7 @@ class attrs:
         self._class_ = class_
         self._id = id
         self._font_size = font_size
+        self._font_family = font_family
     def __str__(self):
         attrs = []
         if self._id != '':
@@ -269,6 +270,8 @@ class attrs:
             attrs.append(f"transform=\"{' '.join(map(str,self._transforms))}\"")
         if self._font_size != '':
             attrs.append(f'font-size="{self._font_size}"')
+        if self._font_family != '':
+            attrs.append(f'font-family="{self._font_family}"')
         if self._class_ != '':
             attrs.append(f'class="{PREFIX+self._class_}"')
         return ' '.join(attrs)
@@ -296,6 +299,8 @@ class attrs:
         ret = copy.deepcopy(self); ret._id = s; return ret
     def font_size(self,s:str):
         ret = copy.deepcopy(self); ret._font_size = s; return ret
+    def font_family(self,s:str):
+        ret = copy.deepcopy(self); ret._font_family = s; return ret
 
 class svgelem:
     '''
