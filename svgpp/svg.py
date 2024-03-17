@@ -106,8 +106,11 @@ class vec:
     def proj(a:'vec',b:'vec'):
         return (a@b)*b/b.radsq()
     @staticmethod
-    def angle(v1:'vec',v2:'vec'):
+    def angler(v1:'vec',v2:'vec'):
         return math.acos((v1@v2)/(abs(v1)*abs(v2)))
+    @staticmethod
+    def angled(v1:'vec',v2:'vec'):
+        return vec.angler(v1,v2)*180/math.pi
 
 pvf = vec|float|int
 pnf = None|float|int
