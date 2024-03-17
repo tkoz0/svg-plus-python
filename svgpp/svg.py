@@ -4,6 +4,7 @@ version 1
 within version 1, try to maintain backward compatibility
 '''
 
+import copy
 import math
 
 PRECISION = 3
@@ -272,29 +273,29 @@ class attrs:
             attrs.append(f'class="{PREFIX+self._class_}"')
         return ' '.join(attrs)
     def stroke(self,s:str):
-        ret = self; ret._stroke = s; return ret
+        ret = copy.deepcopy(self); ret._stroke = s; return ret
     def stroke_width(self,f:float):
-        ret = self; ret._stroke_width = f; return ret
+        ret = copy.deepcopy(self); ret._stroke_width = f; return ret
     def fill(self,s:str):
-        ret = self; ret._fill = s; return ret
+        ret = copy.deepcopy(self); ret._fill = s; return ret
     def fill_opacity(self,f:float):
-        ret = self; ret._fill_opacity = f; return ret
+        ret = copy.deepcopy(self); ret._fill_opacity = f; return ret
     def stroke_opacity(self,f:float):
-        ret = self; ret._stroke_opacity = f; return ret
+        ret = copy.deepcopy(self); ret._stroke_opacity = f; return ret
     def stroke_linecap(self,s:str):
-        ret = self; ret._stroke_linecap = s; return ret
+        ret = copy.deepcopy(self); ret._stroke_linecap = s; return ret
     def stroke_linejoin(self,s:str):
-        ret = self; ret._stroke_linejoin = s; return ret
+        ret = copy.deepcopy(self); ret._stroke_linejoin = s; return ret
     def stroke_dasharray(self,l:list[float]):
-        ret = self; ret._stroke_dasharray = l[:]; return ret
+        ret = copy.deepcopy(self); ret._stroke_dasharray = l[:]; return ret
     def transforms(self,l:list[transform]):
-        ret = self; ret._transforms = l[:]; return ret
+        ret = copy.deepcopy(self); ret._transforms = l[:]; return ret
     def class_(self,s:str):
-        ret = self; ret._class_ = s; return ret
+        ret = copy.deepcopy(self); ret._class_ = s; return ret
     def id(self,s:str):
-        ret = self; ret._id = s; return ret
+        ret = copy.deepcopy(self); ret._id = s; return ret
     def font_size(self,s:str):
-        ret = self; ret._font_size = s; return ret
+        ret = copy.deepcopy(self); ret._font_size = s; return ret
 
 class svgelem:
     '''
