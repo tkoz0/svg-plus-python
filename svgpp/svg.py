@@ -232,6 +232,10 @@ class attrs:
     stroke_linejoin = see linejoin class
     stroke_dasharray = list that will be repeated for (draw, nodraw, ...)
     transforms = list of transformations to apply
+    class_ = class name(s) for css styles
+    id = id for css styles
+    font_size = font size
+    font_family = font family
     '''
     def __init__(self,stroke='',stroke_width=0.0,fill='',fill_opacity=-1.0,stroke_opacity=-1.0,
                  stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[float]=[],
