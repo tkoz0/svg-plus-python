@@ -37,79 +37,79 @@ class vec:
     def __init__(self,x=0.0,y=0.0):
         self.x = float(x)
         self.y = float(y)
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'vec({repr(self.x)},{repr(self.y)})'
-    def __str__(self):
+    def __str__(self) -> str:
         return f'({self.x},{self.y})'
-    def __eq__(self,o):
+    def __eq__(self,o) -> bool:
         return type(o) == type(self) and o.x == self.x and o.y == self.y
-    def __ne__(self,o):
+    def __ne__(self,o) -> bool:
         return not (self == o)
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.x,self.y))
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return abs(self.x) > 0.0 or abs(self.y) > 0.0
-    def __add__(self,o):
+    def __add__(self,o) -> 'vec':
         if type(o) != type(self):
             raise ValueError('can only add(+) another vec')
         return vec(self.x+o.x,self.y+o.y)
-    def __sub__(self,o):
+    def __sub__(self,o) -> 'vec':
         if type(o) != type(self):
             raise ValueError('can only sub(-) another vec')
         return vec(self.x-o.x,self.y-o.y)
-    def __mul__(self,o):
+    def __mul__(self,o) -> 'vec':
         return vec(self.x*o,self.y*o)
-    def __rmul__(self,o):
+    def __rmul__(self,o) -> 'vec':
         return self * o
-    def __truediv__(self,o):
+    def __truediv__(self,o) -> 'vec':
         return vec(self.x/o,self.y/o)
-    def __matmul__(self,o):
+    def __matmul__(self,o) -> float:
         if type(o) != type(self):
             raise ValueError('can only matmul(@) by another vec')
         return self.x*o.x + self.y*o.y
-    def __neg__(self):
+    def __neg__(self) -> 'vec':
         return vec(-self.x,-self.y)
-    def __pos__(self):
+    def __pos__(self) -> 'vec':
         return self
-    def __abs__(self):
+    def __abs__(self) -> float:
         return math.hypot(self.x,self.y)
-    def rad(self):
+    def rad(self) -> float:
         return abs(self)
-    def radsq(self):
+    def radsq(self) -> float:
         return self.x*self.x + self.y*self.y
-    def thetar(self):
+    def thetar(self) -> float:
         return math.atan2(self.y,self.x)
-    def thetad(self):
+    def thetad(self) -> float:
         return self.thetar()*180/math.pi
-    def rotater(self,a=0.0):
+    def rotater(self,a=0.0) -> 'vec':
         return vec.polarr(abs(self),self.thetar()+a)
-    def rotated(self,a=0.0):
+    def rotated(self,a=0.0) -> 'vec':
         return vec.polard(abs(self),self.thetad()+a)
-    def normalize(self):
+    def normalize(self) -> 'vec':
         return self/abs(self)
     @staticmethod
-    def rect(x=0.0,y=0.0):
+    def rect(x=0.0,y=0.0) -> 'vec':
         return vec(x,y)
     @staticmethod
-    def polarr(r=0.0,t=0.0):
+    def polarr(r=0.0,t=0.0) -> 'vec':
         return vec(r*math.cos(t),r*math.sin(t))
     @staticmethod
-    def polard(r=0.0,t=0.0):
+    def polard(r=0.0,t=0.0) -> 'vec':
         return vec.polarr(r,t*math.pi/180)
     @staticmethod
-    def convcomb(v1:'vec',v2:'vec',c:float):
+    def convcomb(v1:'vec',v2:'vec',c:float) -> 'vec':
         return c*v1 + (1-c)*v2
     @staticmethod
-    def midpoint(v1:'vec',v2:'vec'):
+    def midpoint(v1:'vec',v2:'vec') -> 'vec':
         return vec.convcomb(v1,v2,0.5)
     @staticmethod
-    def proj(a:'vec',b:'vec'):
+    def proj(a:'vec',b:'vec') -> 'vec':
         return (a@b)*b/b.radsq()
     @staticmethod
-    def angler(v1:'vec',v2:'vec'):
+    def angler(v1:'vec',v2:'vec') -> float:
         return math.acos((v1@v2)/(abs(v1)*abs(v2)))
     @staticmethod
-    def angled(v1:'vec',v2:'vec'):
+    def angled(v1:'vec',v2:'vec') -> float:
         return vec.angler(v1,v2)*180/math.pi
 
 pvf = vec|float|int
