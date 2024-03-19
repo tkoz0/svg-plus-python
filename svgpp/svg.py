@@ -32,11 +32,23 @@ def setprefix(s=''):
     global PREFIX
     PREFIX = s
 
+# number (float or int)
+num = float|int
+
+# tuple vector
+tvec = tuple[num,num]
+
 class vec:
     ''' immutable 2d vector '''
-    def __init__(self,x=0.0,y=0.0):
-        self.x = float(x)
-        self.y = float(y)
+    def __init__(self,x:'num|tvec|vec'=0.0,y:num=0.0):
+        if isinstance(x,num):
+            self.x = float(x)
+            self.y = float(y)
+        elif isinstance(x,vec):
+            self.x = x.x
+            self.y = x.y
+        else:
+            self.x,self.y = float(x[0]),float(x[1])
     def __repr__(self) -> str:
         return f'vec({repr(self.x)},{repr(self.y)})'
     def __str__(self) -> str:
@@ -49,24 +61,29 @@ class vec:
         return hash((self.x,self.y))
     def __bool__(self) -> bool:
         return abs(self.x) > 0.0 or abs(self.y) > 0.0
-    def __add__(self,o) -> 'vec':
-        if type(o) != type(self):
-            raise ValueError('can only add(+) another vec')
-        return vec(self.x+o.x,self.y+o.y)
-    def __sub__(self,o) -> 'vec':
-        if type(o) != type(self):
-            raise ValueError('can only sub(-) another vec')
-        return vec(self.x-o.x,self.y-o.y)
-    def __mul__(self,o) -> 'vec':
+    def __add__(self,o:'vec|tvec') -> 'vec':
+        if isinstance(o,tuple):
+            return vec(self.x+o[0],self.y+o[1])
+        else:
+            return vec(self.x+o.x,self.y+o.y)
+    def __sub__(self,o:'vec|tvec') -> 'vec':
+        if isinstance(o,tuple):
+            return vec(self.x-o[0],self.y-o[1])
+        else:
+            return vec(self.x-o.x,self.y-o.y)
+    def __mul__(self,o:num) -> 'vec':
         return vec(self.x*o,self.y*o)
-    def __rmul__(self,o) -> 'vec':
+    def __rmul__(self,o:num) -> 'vec':
         return self * o
-    def __truediv__(self,o) -> 'vec':
+    def __truediv__(self,o:num) -> 'vec':
         return vec(self.x/o,self.y/o)
-    def __matmul__(self,o) -> float:
-        if type(o) != type(self):
-            raise ValueError('can only matmul(@) by another vec')
-        return self.x*o.x + self.y*o.y
+    def __matmul__(self,o:'vec|tvec') -> float:
+        if isinstance(o,tuple):
+            return self.x*o[0] + self.y*o[1]
+        else:
+            return self.x*o.x + self.y*o.y
+    def __rmatmul__(self,o:'vec|tvec') -> float:
+        return self @ o
     def __neg__(self) -> 'vec':
         return vec(-self.x,-self.y)
     def __pos__(self) -> 'vec':
@@ -88,56 +105,69 @@ class vec:
     def normalize(self) -> 'vec':
         return self/abs(self)
     @staticmethod
-    def rect(x=0.0,y=0.0) -> 'vec':
+    def rect(x:num=0.0,y:num=0.0) -> 'vec':
         return vec(x,y)
     @staticmethod
-    def polarr(r=0.0,t=0.0) -> 'vec':
+    def polarr(r:num=0.0,t:num=0.0) -> 'vec':
         return vec(r*math.cos(t),r*math.sin(t))
     @staticmethod
-    def polard(r=0.0,t=0.0) -> 'vec':
+    def polard(r:num=0.0,t:num=0.0) -> 'vec':
         return vec.polarr(r,t*math.pi/180)
     @staticmethod
-    def convcomb(v1:'vec',v2:'vec',c:float) -> 'vec':
+    def convcomb(v1:'vec|tvec',v2:'vec|tvec',c:num) -> 'vec':
+        if isinstance(v1,tuple):
+            v1 = vec(v1)
+        if isinstance(v2,tuple):
+            v2 = vec(v2)
         return c*v1 + (1-c)*v2
     @staticmethod
-    def midpoint(v1:'vec',v2:'vec') -> 'vec':
+    def midpoint(v1:'vec|tvec',v2:'vec|tvec') -> 'vec':
         return vec.convcomb(v1,v2,0.5)
     @staticmethod
-    def proj(a:'vec',b:'vec') -> 'vec':
+    def proj(a:'vec|tvec',b:'vec|tvec') -> 'vec':
+        if isinstance(a,tuple):
+            a = vec(a)
+        if isinstance(b,tuple):
+            b = vec(b)
         return (a@b)*b/b.radsq()
     @staticmethod
-    def angler(v1:'vec',v2:'vec') -> float:
+    def angler(v1:'vec|tvec',v2:'vec|tvec') -> float:
+        if isinstance(v1,tuple):
+            v1 = vec(v1)
+        if isinstance(v2,tuple):
+            v2 = vec(v2)
         return math.acos((v1@v2)/(abs(v1)*abs(v2)))
     @staticmethod
-    def angled(v1:'vec',v2:'vec') -> float:
+    def angled(v1:'vec|tvec',v2:'vec|tvec') -> float:
         return vec.angler(v1,v2)*180/math.pi
 
-pvf = vec|float|int
-pnf = None|float|int
-pfi = float|int
+# TODO change pvf to include tvec
+
+pvf = vec|tvec|num
+pnf = None|num
 
 def parsevec1(a:pvf,b:pnf=None) -> vec:
-    if isinstance(a,vec):
-        return a
-    elif isinstance(a,pfi) and isinstance(b,pfi):
+    if isinstance(a,(vec,tuple)):
+        return vec(a)
+    elif isinstance(a,num) and isinstance(b,num):
         return vec(a,b)
     else:
         raise ValueError()
 
-def parsevec2(a:pvf,b:pvf,c:pnf=None,d:pnf=None):
-    if isinstance(a,vec) and isinstance(b,vec):
-        return a,b
-    elif isinstance(a,pfi) and isinstance(b,pfi) \
-        and isinstance(c,pfi) and isinstance(d,pfi):
+def parsevec2(a:pvf,b:pvf,c:pnf=None,d:pnf=None) -> tuple[vec,vec]:
+    if isinstance(a,(vec,tuple)) and isinstance(b,(vec,tuple)):
+        return vec(a),vec(b)
+    elif isinstance(a,num) and isinstance(b,num) \
+        and isinstance(c,num) and isinstance(d,num):
         return vec(a,b),vec(c,d)
     else:
         raise ValueError()
 
-def parsevec3(a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None):
-    if isinstance(a,vec) and isinstance(b,vec) and isinstance(c,vec):
-        return a,b,c
-    elif isinstance(a,pfi) and isinstance(b,pfi) and isinstance(c,pfi) \
-        and isinstance(d,pfi) and isinstance(e,pfi) and isinstance(f,pfi):
+def parsevec3(a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None) -> tuple[vec,vec,vec]:
+    if isinstance(a,(vec,tuple)) and isinstance(b,(vec,tuple)) and isinstance(c,(vec,tuple)):
+        return vec(a),vec(b),vec(c)
+    elif isinstance(a,num) and isinstance(b,num) and isinstance(c,num) \
+        and isinstance(d,num) and isinstance(e,num) and isinstance(f,num):
         return vec(a,b),vec(c,d),vec(e,f)
     else:
         raise ValueError()
@@ -176,20 +206,20 @@ class translate(transform):
         return f'translate({fstr(self.v.x)} {fstr(self.v.y)})'
 
 class rotate(transform):
-    def __init__(self,a=0.0):
-        self.a = a
+    def __init__(self,a:num=0.0):
+        self.a = float(a)
     def __str__(self):
         return f'rotate({fstr(self.a)})'
 
 class skewx(transform):
-    def __init__(self,a=0.0):
-        self.a = a
+    def __init__(self,a:num=0.0):
+        self.a = float(a)
     def __str__(self):
         return f'skewX({fstr(self.a)})'
 
 class skewy(transform):
-    def __init__(self,a=0.0):
-        self.a = a
+    def __init__(self,a:num=0.0):
+        self.a = float(a)
     def __str__(self):
         return f'skewY({fstr(self.a)})'
 
@@ -197,6 +227,8 @@ class scale(transform):
     def __init__(self,a:pvf,b:pnf=None):
         if isinstance(a,vec):
             self.v = a
+        elif isinstance(a,tuple):
+            self.v = vec(a)
         elif b is None:
             self.v = vec(a,a)
         else:
@@ -211,13 +243,13 @@ class affine(transform):
     '''
     (x,y) -> (a*x+c*y+e,b*x+d*y+f)
     '''
-    def __init__(self,a=1.0,b=0.0,c=0.0,d=1.0,e=0.0,f=0.0):
-        self.a = a
-        self.b = b
-        self.c = c
-        self.d = d
-        self.e = e
-        self.f = f
+    def __init__(self,a:num=1.0,b:num=0.0,c:num=0.0,d:num=1.0,e:num=0.0,f:num=0.0):
+        self.a = float(a)
+        self.b = float(b)
+        self.c = float(c)
+        self.d = float(d)
+        self.e = float(e)
+        self.f = float(f)
     def __str__(self):
         return f'matrix({fstr(self.a)} {fstr(self.b)} {fstr(self.c)} {fstr(self.d)} {fstr(self.e)} {fstr(self.f)})'
 
@@ -237,8 +269,8 @@ class attrs:
     font_size = font size
     font_family = font family
     '''
-    def __init__(self,stroke='',stroke_width=0.0,fill='',fill_opacity=-1.0,stroke_opacity=-1.0,
-                 stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[float]=[],
+    def __init__(self,stroke='',stroke_width:num=0.0,fill='',fill_opacity:num=-1.0,stroke_opacity:num=-1.0,
+                 stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[num]=[],
                  transforms:list[transform]=[],class_='',id='',font_size='',font_family=''):
         self._stroke = stroke
         self._stroke_width = float(stroke_width)
@@ -284,19 +316,19 @@ class attrs:
         return ' '.join(attrs)
     def stroke(self,s:str):
         ret = copy.deepcopy(self); ret._stroke = s; return ret
-    def stroke_width(self,f:float):
+    def stroke_width(self,f:num):
         ret = copy.deepcopy(self); ret._stroke_width = f; return ret
     def fill(self,s:str):
         ret = copy.deepcopy(self); ret._fill = s; return ret
-    def fill_opacity(self,f:float):
+    def fill_opacity(self,f:num):
         ret = copy.deepcopy(self); ret._fill_opacity = f; return ret
-    def stroke_opacity(self,f:float):
+    def stroke_opacity(self,f:num):
         ret = copy.deepcopy(self); ret._stroke_opacity = f; return ret
     def stroke_linecap(self,s:str):
         ret = copy.deepcopy(self); ret._stroke_linecap = s; return ret
     def stroke_linejoin(self,s:str):
         ret = copy.deepcopy(self); ret._stroke_linejoin = s; return ret
-    def stroke_dasharray(self,l:list[float]):
+    def stroke_dasharray(self,l:list[num]):
         ret = copy.deepcopy(self); ret._stroke_dasharray = l[:]; return ret
     def transforms(self,l:list[transform]):
         ret = copy.deepcopy(self); ret._transforms = l[:]; return ret
@@ -360,7 +392,7 @@ class rect(svgelem):
     v2 = bottom right corner
     rx,ry = radius for rounded corners
     '''
-    def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None,rx=0.0,ry=0.0,attrs=attrs()):
+    def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None,rx:num=0.0,ry:num=0.0,attrs=attrs()):
         self.v1,self.v2 = parsevec2(a,b,c,d)
         self.rx,self.ry = float(rx),float(ry)
         self.attrs = attrs
@@ -381,7 +413,7 @@ class circle(svgelem):
     c = center
     r = radius
     '''
-    def __init__(self,r:float,a:pvf,b:pnf=None,attrs=attrs()):
+    def __init__(self,r:num,a:pvf,b:pnf=None,attrs=attrs()):
         self.c = parsevec1(a,b)
         self.r = float(r)
         self.attrs = attrs
@@ -398,7 +430,7 @@ class ellipse(svgelem):
     c = center
     r = radii
     '''
-    def __init__(self,rx:float,ry:float,a:pvf,b:pnf=None,attrs=attrs()):
+    def __init__(self,rx:num,ry:num,a:pvf,b:pnf=None,attrs=attrs()):
         self.c = parsevec1(a,b)
         self.rx,self.ry = float(rx),float(ry)
         self.attrs = attrs
@@ -430,8 +462,8 @@ class polyline(svgelem):
     svg polyline
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]=[],attrs=attrs()):
-        self.points = points[:]
+    def __init__(self,points:list[vec]|list[tvec]=[],attrs=attrs()):
+        self.points = [vec(v) for v in points]
         self.attrs = attrs
     def __str__(self):
         ret = f"<polyline points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
@@ -445,8 +477,8 @@ class polygon(svgelem):
     svg polygon
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]=[],attrs=attrs()):
-        self.points = points[:]
+    def __init__(self,points:list[vec]|list[tvec]=[],attrs=attrs()):
+        self.points = [vec(v) for v in points]
         self.attrs = attrs
     def __str__(self):
         ret = f"<polygon points=\"{' '.join(f'{fstr(p.x)} {fstr(p.y)}' for p in self.points)}\""
@@ -479,7 +511,7 @@ class path(svgelem):
     '''
     svg path
     '''
-    def __init__(self,d:'list[pathelem]|pathelem'=[],attrs=attrs()):
+    def __init__(self,d:list[pathelem]|pathelem=[],attrs=attrs()):
         self.d = d[:] if isinstance(d,list) else [d]
         self.attrs = attrs
     def __str__(self):
@@ -534,7 +566,7 @@ class path(svgelem):
         '''
         horizontal line to (absolute)
         '''
-        def __init__(self,x=0.0):
+        def __init__(self,x:num=0.0):
             self.x = float(x)
         def __str__(self):
             return f'H {fstr(self.x)}'
@@ -543,7 +575,7 @@ class path(svgelem):
         '''
         horizontal line to (relative)
         '''
-        def __init__(self,dx=0.0):
+        def __init__(self,dx:num=0.0):
             self.dx = float(dx)
         def __str__(self):
             return f'h {fstr(self.dx)}'
@@ -552,7 +584,7 @@ class path(svgelem):
         '''
         vertical line to (absolute)
         '''
-        def __init__(self,y=0.0):
+        def __init__(self,y:num=0.0):
             self.y = float(y)
         def __str__(self):
             return f'V {fstr(self.y)}'
@@ -561,7 +593,7 @@ class path(svgelem):
         '''
         vertical line to (relative)
         '''
-        def __init__(self,dy=0.0):
+        def __init__(self,dy:num=0.0):
             self.dy = float(dy)
         def __str__(self):
             return f'v {fstr(self.dy)}'
@@ -689,12 +721,12 @@ class path(svgelem):
         sweep = sweep flag (use ellipse on counterclockwise side)
         v = endpoint
         '''
-        def __init__(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+        def __init__(self,v:vec|tvec,rx:num,ry:num,rot:num=0.0,sweep=False,laflag=False):
             self.rx,self.ry = float(rx),float(ry)
             self.rot = float(rot)
             self.laflag = laflag
             self.sweep = sweep
-            self.v = v
+            self.v = vec(v)
         def __str__(self):
             return f'A {fstr(self.rx)} {fstr(self.ry)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -707,12 +739,12 @@ class path(svgelem):
         sweep = sweep flag (use ellipse on counterclockwise side)
         v = endpoint
         '''
-        def __init__(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+        def __init__(self,v:vec|tvec,rx:num,ry:num,rot:num=0.0,sweep=False,laflag=False):
             self.rx,self.ry = float(rx),float(ry)
             self.rot = float(rot)
             self.laflag = laflag
             self.sweep = sweep
-            self.v = v
+            self.v = vec(v)
         def __str__(self):
             return f'a {fstr(self.rx)} {fstr(self.ry)} {fstr(self.rot)} {int(self.laflag)} {int(self.sweep)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
@@ -743,16 +775,16 @@ class pathseq(pathelem):
     def l(self,a:pvf,b:pnf=None):
         ''' line to (relative) '''
         return pathseq(self.path+[path.l(a,b)])
-    def H(self,x:float):
+    def H(self,x:num):
         ''' horizontal line to (absolute) '''
         return pathseq(self.path+[path.H(x)])
-    def h(self,dx:float):
+    def h(self,dx:num):
         ''' horizontal line to (relative) '''
         return pathseq(self.path+[path.h(dx)])
-    def V(self,y:float):
+    def V(self,y:num):
         ''' vertical line to (absolute) '''
         return pathseq(self.path+[path.V(y)])
-    def v(self,dy:float):
+    def v(self,dy:num):
         ''' vertical line to (relative) '''
         return pathseq(self.path+[path.v(dy)])
     def Z(self):
@@ -785,10 +817,10 @@ class pathseq(pathelem):
     def t(self,a:pvf,b:pnf=None):
         ''' quadratic bezier curve with implied control (relative) '''
         return pathseq(self.path+[path.t(a,b)])
-    def A(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+    def A(self,v:vec|tvec,rx:num,ry:num,rot:num=0.0,sweep=False,laflag=False):
         ''' arc (absolute) '''
         return pathseq(self.path+[path.A(v,rx,ry,rot,sweep,laflag)])
-    def a(self,v:vec,rx:float,ry:float,rot=0.0,sweep=False,laflag=False):
+    def a(self,v:vec|tvec,rx:num,ry:num,rot:num=0.0,sweep=False,laflag=False):
         ''' arc (relative) '''
         return pathseq(self.path+[path.a(v,rx,ry,rot,sweep,laflag)])
 
@@ -826,9 +858,9 @@ class cssstyles(svgelem):
 class svgimage:
     xmlns = 'http://www.w3.org/2000/svg'
     version = '1.1'
-    def __init__(self,c1:vec,c2:vec,width:int,height:int):
-        self.vb1 = c1
-        self.vb2 = c2
+    def __init__(self,c1:vec|tvec,c2:vec|tvec,width:int,height:int):
+        self.vb1 = vec(c1)
+        self.vb2 = vec(c2)
         self.width = width
         self.height = height
         self.elems: list[svgelem] = []
