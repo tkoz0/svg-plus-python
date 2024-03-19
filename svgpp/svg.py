@@ -826,7 +826,7 @@ class cssstyles(svgelem):
 class svgimage:
     xmlns = 'http://www.w3.org/2000/svg'
     version = '1.1'
-    def __init__(self,c1=vec(),c2=vec(100,100),width=200,height=200):
+    def __init__(self,c1:vec,c2:vec,width:int,height:int):
         self.vb1 = c1
         self.vb2 = c2
         self.width = width
