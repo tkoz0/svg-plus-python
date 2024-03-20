@@ -71,6 +71,10 @@ class vec:
             return vec(self.x-o[0],self.y-o[1])
         else:
             return vec(self.x-o.x,self.y-o.y)
+    def __radd__(self,o:'vec|tvec') -> 'vec':
+        return self + o
+    def __rsub__(self,o:'vec|tvec') -> 'vec':
+        return -(self - o)
     def __mul__(self,o:num) -> 'vec':
         return vec(self.x*o,self.y*o)
     def __rmul__(self,o:num) -> 'vec':
@@ -271,7 +275,7 @@ class attrs:
     '''
     def __init__(self,stroke='',stroke_width:num=0.0,fill='',fill_opacity:num=-1.0,stroke_opacity:num=-1.0,
                  stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[num]=[],
-                 transforms:list[transform]=[],class_='',id='',font_size='',font_family=''):
+                 transforms:list[transform]=[],class_='',id='',font_size='',font_family='',style=''):
         self._stroke = stroke
         self._stroke_width = float(stroke_width)
         self._fill = fill
@@ -285,6 +289,7 @@ class attrs:
         self._id = id
         self._font_size = font_size
         self._font_family = font_family
+        self._style = style
     def __str__(self):
         attrs = []
         if self._id != '':
@@ -313,6 +318,8 @@ class attrs:
             attrs.append(f'font-family="{self._font_family}"')
         if self._class_ != '':
             attrs.append(f'class="{PREFIX+self._class_}"')
+        if self._style != '':
+            attrs.append(f'style="{self._style}"')
         return ' '.join(attrs)
     def stroke(self,s:str):
         ret = copy.deepcopy(self); ret._stroke = s; return ret
@@ -340,6 +347,8 @@ class attrs:
         ret = copy.deepcopy(self); ret._font_size = s; return ret
     def font_family(self,s:str):
         ret = copy.deepcopy(self); ret._font_family = s; return ret
+    def style(self,s:str):
+        ret = copy.deepcopy(self); ret._style = s; return ret
 
 class svgelem:
     '''
@@ -462,7 +471,7 @@ class polyline(svgelem):
     svg polyline
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]|list[tvec]=[],attrs=attrs()):
+    def __init__(self,points:list[vec]|list[tvec]|list[vec|tvec]=[],attrs=attrs()):
         self.points = [vec(v) for v in points]
         self.attrs = attrs
     def __str__(self):
@@ -477,7 +486,7 @@ class polygon(svgelem):
     svg polygon
     points = list of points to connect
     '''
-    def __init__(self,points:list[vec]|list[tvec]=[],attrs=attrs()):
+    def __init__(self,points:list[vec]|list[tvec]|list[vec|tvec]=[],attrs=attrs()):
         self.points = [vec(v) for v in points]
         self.attrs = attrs
     def __str__(self):
