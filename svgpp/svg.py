@@ -145,8 +145,6 @@ class vec:
     def angled(v1:'vec|tvec',v2:'vec|tvec') -> float:
         return vec.angler(v1,v2)*180/math.pi
 
-# TODO change pvf to include tvec
-
 pvf = vec|tvec|num
 pnf = None|num
 
