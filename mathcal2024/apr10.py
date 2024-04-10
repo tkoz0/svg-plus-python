@@ -104,6 +104,16 @@ svg3 += text('c&#8322;',175,55)
 
 svgstrlist.append(str(svg3))
 
+svg4 = copy.deepcopy(svg)
+styleblue = attrs(stroke='blue',fill='none',stroke_width=0.03)
+svg4 += polyline([C+uu,C,C+u],styleblue)
+svg4 += line(C,(3,2),attrs=styleblue)
+svg4 += polyline([C+u,(3,2),C+uu],styleblue.stroke('orange'))
+svg4 += polyline([C+uu,A,(3,2)],styleblue.stroke('red'))
+svg4 += polyline([C+u,B,(3,2)],styleblue.stroke('#0f0'))
+
+svgstrlist.append(str(svg4))
+
 ################################################################################
 
 out = open(f'{DATE}.html','w')
