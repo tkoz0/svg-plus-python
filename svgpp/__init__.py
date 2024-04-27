@@ -1,4 +1,5 @@
 from .svg import *
+from .vec import *
 
 __all__ = \
 [
@@ -6,6 +7,8 @@ __all__ = \
     'setwhitespace',
     'setprefix',
     'vec',
+    'num',
+    'tvec',
     'linecap',
     'linejoin',
     'transform',
