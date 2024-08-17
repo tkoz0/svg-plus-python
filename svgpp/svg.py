@@ -128,10 +128,14 @@ class attrs:
     id = id for css styles
     font_size = font size
     font_family = font family
+    font_style = can make font italic
+    font_weight = can make font bold
+    text_decoration = other font properties
     '''
     def __init__(self,stroke='',stroke_width:num=0.0,fill='',fill_opacity:num=-1.0,stroke_opacity:num=-1.0,
                  stroke_linecap='',stroke_linejoin='',stroke_dasharray:list[num]=[],
-                 transforms:list[transform]=[],class_='',id='',font_size='',font_family='',style=''):
+                 transforms:list[transform]=[],class_='',id='',font_size='',font_family='',
+                 font_style='',font_weight='',text_decoration='',style=''):
         self._stroke = stroke
         self._stroke_width = float(stroke_width)
         self._fill = fill
@@ -145,6 +149,9 @@ class attrs:
         self._id = id
         self._font_size = font_size
         self._font_family = font_family
+        self._font_style = font_style
+        self._font_weight = font_weight
+        self._text_decoration = text_decoration
         self._style = style
     def __str__(self):
         attrs = []
@@ -172,8 +179,14 @@ class attrs:
             attrs.append(f'font-size="{self._font_size}"')
         if self._font_family != '':
             attrs.append(f'font-family="{self._font_family}"')
+        if self._font_style != '':
+            attrs.append(f'font-style="{self._font_style}"')
+        if self._font_weight != '':
+            attrs.append(f'font-weight="{self._font_weight}"')
         if self._class_ != '':
             attrs.append(f'class="{PREFIX+self._class_}"')
+        if self._text_decoration != '':
+            attrs.append(f'text-decoration="{self._text_decoration}"')
         if self._style != '':
             attrs.append(f'style="{self._style}"')
         return ' '.join(attrs)
@@ -203,8 +216,14 @@ class attrs:
         ret = copy.deepcopy(self); ret._font_size = s; return ret
     def font_family(self,s:str):
         ret = copy.deepcopy(self); ret._font_family = s; return ret
+    def font_style(self,s:str):
+        ret = copy.deepcopy(self); ret._font_style = s; return ret
+    def font_weight(self,s:str):
+        ret = copy.deepcopy(self); ret._font_weight = s; return ret
     def style(self,s:str):
         ret = copy.deepcopy(self); ret._style = s; return ret
+    def text_decoration(self,s:str):
+        ret = copy.deepcopy(self); ret._text_decoration = s; return ret
 
 class svgelem:
     '''
