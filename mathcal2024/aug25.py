@@ -15,7 +15,7 @@ svgstrlist: list[str] = []
 
 ################################################################################
 
-DATE = 'aug26'
+DATE = 'aug25'
 setwhitespace(4)
 setprefix(f'{DATE}_')
 
