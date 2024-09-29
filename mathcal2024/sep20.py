@@ -44,7 +44,7 @@ svg += mpline(T,S,styleblack.stroke('#7cf'))
 svg += mpline(S,P,styleblack.stroke('#7cf'))
 svg += mpline(S,R,styleblack)
 svg += text('Area = 16',2.2,5.3,fontstyle)
-svg += text('Find the perimiter.',1,9,fontstyle)
+svg += text('Find the perimeter.',1,9,fontstyle)
 
 svgstrlist.append(str(svg))
 
