@@ -282,7 +282,7 @@ class comment(svgelem):
         self.text = text
         self.multiline = multiline
     def __str__(self):
-        # TODO escape text
+        # TODO escape text (optionally?)
         if WHITESPACE < 0:
             return ''
         if self.multiline:
@@ -427,6 +427,7 @@ class text(svgelem):
         self.attrs = attrs
     def __str__(self):
         # TODO escape text (this will break some mathcal written stuff)
+        # maybe make escaping optional
         ret = f'<text x="{fstr(self.pos.x)}" y="{fstr(self.pos.y)}"'
         attrs_ = str(self.attrs)
         if attrs_ != '':
