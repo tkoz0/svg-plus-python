@@ -7,9 +7,13 @@ within version 1, try to maintain backward compatibility
 import copy
 from .vec import *
 
+# global parameters ============================================================
+
 PRECISION = 3
 def setprecision(p=3):
-    ''' maximum number of digits after decimal place '''
+    '''
+    maximum number of digits after decimal point
+    '''
     global PRECISION
     PRECISION = p
 
@@ -22,15 +26,21 @@ def fstr(v:float):
 
 WHITESPACE = 4
 def setwhitespace(i=4):
-    ''' number of spaces for indentation, -1 to disable whitespace '''
+    '''
+    number of spaces for indentation, -1 to disable whitespace
+    '''
     global WHITESPACE
     WHITESPACE = i
 
 PREFIX = ''
 def setprefix(s=''):
-    ''' prefix for class/id names '''
+    '''
+    prefix for class/id names
+    '''
     global PREFIX
     PREFIX = s
+
+# constants ====================================================================
 
 class linecap:
     '''
@@ -53,6 +63,34 @@ class linejoin:
     miter = 'miter'
     round = 'round'
     bevel = 'bevel'
+
+# escape text ==================================================================
+
+_esct_map =  {
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;'
+}
+def _esct(s:str) -> str:
+    '''
+    escape html text
+    '''
+    return ''.join(_esct_map[c] if c in _esct_map else c for c in s)
+
+_esca_map =  {
+    '<': '&lt;',
+    '>': '&gt;',
+    '&': '&amp;',
+    '"': '&quot;',
+    '\n': '&#10;'
+}
+def _esca(s:str) -> str:
+    '''
+    escape html attribute
+    '''
+    return ''.join(_esca_map[c] if c in _esca_map else c for c in s)
+
+# transformations ==============================================================
 
 class transform:
     '''
@@ -111,7 +149,10 @@ class affine(transform):
         self.e = float(e)
         self.f = float(f)
     def __str__(self):
-        return f'matrix({fstr(self.a)} {fstr(self.b)} {fstr(self.c)} {fstr(self.d)} {fstr(self.e)} {fstr(self.f)})'
+        return f'matrix({fstr(self.a)} {fstr(self.b)} {fstr(self.c)}' \
+                     f' {fstr(self.d)} {fstr(self.e)} {fstr(self.f)})'
+
+# svg attributes ===============================================================
 
 class attrs:
     '''
@@ -225,6 +266,8 @@ class attrs:
     def text_decoration(self,s:str):
         ret = copy.deepcopy(self); ret._text_decoration = s; return ret
 
+# svg elements =================================================================
+
 class svgelem:
     '''
     base class for svg elements
@@ -239,6 +282,7 @@ class comment(svgelem):
         self.text = text
         self.multiline = multiline
     def __str__(self):
+        # TODO escape text
         if WHITESPACE < 0:
             return ''
         if self.multiline:
@@ -382,11 +426,14 @@ class text(svgelem):
         self.pos = parsevec1(a,b)
         self.attrs = attrs
     def __str__(self):
+        # TODO escape text (this will break some mathcal written stuff)
         ret = f'<text x="{fstr(self.pos.x)}" y="{fstr(self.pos.y)}"'
         attrs_ = str(self.attrs)
         if attrs_ != '':
             ret += ' ' + attrs_
         return ret + f'>{self.text}</text>'
+
+# svg paths ====================================================================
 
 class pathelem:
     '''
@@ -406,9 +453,9 @@ class path(svgelem):
         if attrs_ != '':
             ret += ' ' + attrs_
         return ret + ' />'
-    def append(self,e:'pathelem'):
+    def append(self,e:pathelem):
         self.d.append(e)
-    def __iadd__(self,e:'pathelem'):
+    def __iadd__(self,e:pathelem):
         self.d.append(e)
         return self
 
@@ -710,6 +757,9 @@ class pathseq(pathelem):
         ''' arc (relative) '''
         return pathseq(self.path+[path.a(v,rx,ry,rot,sweep,laflag)])
 
+# css style ====================================================================
+# TODO currently not used
+
 class cssstyle:
     ''' base class '''
 
@@ -732,7 +782,7 @@ class cssstyles(svgelem):
     css styles for embedding in svg
     '''
     def __init__(self,css:list[cssstyle]=[]):
-        self.css = css
+        self.css = css[:]
     def __str__(self):
         ws = lambda i : '' if WHITESPACE < 0 else '\n' + ' '*(i*WHITESPACE)
         #ws2 = lambda i : '' if WHITESPACE < 0 else ' '*(i*WHITESPACE)
@@ -740,6 +790,9 @@ class cssstyles(svgelem):
         for css in self.css:
             ret += ws(1) + str(css)
         return ret + '\n</style>'
+
+# gradients ====================================================================
+# TODO currently not used
 
 class gradstop:
     def __init__(self,class_:str,offset:float,color:str,opacity:float):
@@ -760,6 +813,9 @@ class radgrad:
         self.stops = stops[:]
         self.r = r
         self.c,self.f = parsevec2(a,b,c,d)
+
+# main svg object ==============================================================
+# TODO add css classes for this
 
 class svgimage:
     xmlns = 'http://www.w3.org/2000/svg'

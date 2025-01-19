@@ -78,15 +78,27 @@ class vec:
         return self/abs(self)
     @staticmethod
     def rect(x:num=0.0,y:num=0.0) -> 'vec':
+        '''
+        rectangular coordinates, same as vec(x,y)
+        '''
         return vec(x,y)
     @staticmethod
     def polarr(r:num=0.0,t:num=0.0) -> 'vec':
+        '''
+        polar coordinates with radians
+        '''
         return vec(r*math.cos(t),r*math.sin(t))
     @staticmethod
     def polard(r:num=0.0,t:num=0.0) -> 'vec':
+        '''
+        polar coordinates with degrees
+        '''
         return vec.polarr(r,t*math.pi/180)
     @staticmethod
     def convcomb(v1:'vec|tvec',v2:'vec|tvec',c:num) -> 'vec':
+        '''
+        convex combination
+        '''
         if isinstance(v1,tuple):
             v1 = vec(v1)
         if isinstance(v2,tuple):
@@ -94,9 +106,15 @@ class vec:
         return c*v1 + (1-c)*v2
     @staticmethod
     def midpoint(v1:'vec|tvec',v2:'vec|tvec') -> 'vec':
+        '''
+        midpoint/average of 2 vectors
+        '''
         return vec.convcomb(v1,v2,0.5)
     @staticmethod
     def proj(a:'vec|tvec',b:'vec|tvec') -> 'vec':
+        '''
+        vector projection of a onto b
+        '''
         if isinstance(a,tuple):
             a = vec(a)
         if isinstance(b,tuple):
@@ -104,6 +122,9 @@ class vec:
         return (a@b)*b/b.radsq()
     @staticmethod
     def angler(v1:'vec|tvec',v2:'vec|tvec') -> float:
+        '''
+        angle between 2 vectors (radians)
+        '''
         if isinstance(v1,tuple):
             v1 = vec(v1)
         if isinstance(v2,tuple):
@@ -111,9 +132,15 @@ class vec:
         return math.acos((v1@v2)/(abs(v1)*abs(v2)))
     @staticmethod
     def angled(v1:'vec|tvec',v2:'vec|tvec') -> float:
+        '''
+        angle between 2 vectors (degrees)
+        '''
         return vec.angler(v1,v2)*180/math.pi
 
+# "point vector/float"
 pvf = vec|tvec|num
+
+# "point none/float"
 pnf = None|num
 
 def parsevec1(a:pvf,b:pnf=None) -> vec:
@@ -141,3 +168,5 @@ def parsevec3(a:pvf,b:pvf,c:pvf,d:pnf=None,e:pnf=None,f:pnf=None) -> tuple[vec,v
         return vec(a,b),vec(c,d),vec(e,f)
     else:
         raise ValueError()
+
+# TODO "vec3" class for 3d vector
