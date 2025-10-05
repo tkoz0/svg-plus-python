@@ -71,8 +71,14 @@ class vec:
     def thetad(self) -> float:
         return self.thetar()*180/math.pi
     def rotater(self,a=0.0) -> 'vec':
+        '''
+        rotate vector by an angle in radians
+        '''
         return vec.polarr(abs(self),self.thetar()+a)
     def rotated(self,a=0.0) -> 'vec':
+        '''
+        rotate vector by an angle in degrees
+        '''
         return vec.polard(abs(self),self.thetad()+a)
     def normalize(self) -> 'vec':
         return self/abs(self)
@@ -136,6 +142,14 @@ class vec:
         angle between 2 vectors (degrees)
         '''
         return vec.angler(v1,v2)*180/math.pi
+    @staticmethod
+    def centroid(*vs:'vec|tvec') -> 'vec':
+        '''
+        average point of given points
+        '''
+        xs = sum(vec(v).x for v in vs)
+        ys = sum(vec(v).y for v in vs)
+        return vec(xs,ys)/len(vs)
 
 # "point vector/float"
 pvf = vec|tvec|num
