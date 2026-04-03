@@ -62,6 +62,8 @@ class vec:
         return self
     def __abs__(self) -> float:
         return math.hypot(self.x,self.y)
+    def __iter__(self):
+        return iter((self.x,self.y))
     def rad(self) -> float:
         return abs(self)
     def radsq(self) -> float:
