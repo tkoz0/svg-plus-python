@@ -35,8 +35,8 @@ def tick1(P,Q):
     return [line(P,Q),line(M+u,M-u)]
 
 def tick2(P,Q):
-    M1 = vec.convcomb(P,Q,0.45)
-    M2 = vec.convcomb(P,Q,0.55)
+    M1 = vec.convcomb(P,Q,0.55)
+    M2 = vec.convcomb(P,Q,0.45)
     a = (P-Q).thetad()+90
     u = vec.polard(0.2,a)
     return [line(P,Q),line(M1+u,M1-u),line(M2+u,M2-u)]

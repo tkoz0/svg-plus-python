@@ -111,7 +111,13 @@ class vec:
             v1 = vec(v1)
         if isinstance(v2,tuple):
             v2 = vec(v2)
-        return c*v1 + (1-c)*v2
+        return v1 + (v2-v1)*c
+    @staticmethod
+    def lerp(v1:'vec|tvec',v2:'vec|tvec',c:num) -> 'vec':
+        '''
+        linear interpolation
+        '''
+        return vec.convcomb(v1,v2,c)
     @staticmethod
     def midpoint(v1:'vec|tvec',v2:'vec|tvec') -> 'vec':
         '''
