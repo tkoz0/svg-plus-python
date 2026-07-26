@@ -64,9 +64,22 @@ class vec:
         return math.hypot(self.x,self.y)
     def __iter__(self):
         return iter((self.x,self.y))
+    def __getitem__(self,i) -> float:
+        if i == 0: return self.x
+        if i == 1: return self.y
+        raise ValueError()
+    def __setitem__(self,i,v:float):
+        assert isinstance(v,float)
+        if i == 0: self.x = v
+        if i == 1: self.y = v
+        raise ValueError()
     def rad(self) -> float:
         return abs(self)
     def radsq(self) -> float:
+        return self.x*self.x + self.y*self.y
+    def mag(self) -> float:
+        return abs(self)
+    def magsq(self) -> float:
         return self.x*self.x + self.y*self.y
     def thetar(self) -> float:
         return math.atan2(self.y,self.x)
