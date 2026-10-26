@@ -331,7 +331,7 @@ class rect(svgelem):
         h = self.v2.y - self.v1.y
         ret = f'<rect x="{fstr(self.v1.x)}" y="{fstr(self.v1.y)}" width="{fstr(w)}" height="{fstr(h)}"'
         if self.rx > 0: ret += f' rx="{fstr(self.rx)}"'
-        if self.rx > 0: ret += f' ry="{fstr(self.ry)}"'
+        if self.ry > 0: ret += f' ry="{fstr(self.ry)}"'
         attrs_ = str(self.attrs)
         if attrs_ != '':
             ret += ' ' + attrs_
@@ -598,7 +598,7 @@ class path(svgelem):
         def __init__(self,a:pvf,b:pvf,c:pnf=None,d:pnf=None):
             self.v2,self.v = parsevec2(a,b,c,d)
         def __str__(self):
-            return f'S {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
+            return f's {fstr(self.v2.x)} {fstr(self.v2.y)} {fstr(self.v.x)} {fstr(self.v.y)}'
 
     class Q(pathelem):
         '''
