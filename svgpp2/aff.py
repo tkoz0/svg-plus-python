@@ -3,6 +3,7 @@ Affine transformations
 
 Design notes:
 - immutable to be reusable, avoid unexpected changes, and be hashable
+- no tolerances which depend on scale, to support very large and very small
 '''
 
 import math
@@ -31,10 +32,16 @@ class Affine2:
         yAxis = Vec2(0,1),
         origin = Vec2(0,0)
     ):
+        '''
+        Construction supported from 3 objects convertible to Vec2.
+        The defaults are for the identity transformation.
+        Shared defaults are fine since Vec2 is immutable.
+        '''
         xAxis = Vec2(xAxis)
         yAxis = Vec2(yAxis)
         origin = Vec2(origin)
-        # need to do this to avoid the immutability exception
+        # bypass the __setattr__ exception for construction
+        # Affine2.__setattr__ throws to enforce immutability
         object.__setattr__(self,'xAxis',xAxis)
         object.__setattr__(self,'yAxis',yAxis)
         object.__setattr__(self,'origin',origin)
@@ -46,7 +53,7 @@ class Affine2:
         raise AttributeError('Affine2 is immutable')
 
     def __repr__(self) -> str:
-        return f'Affine2(origin={self.origin!r},xAxis={self.xAxis!r},yAxis={self.yAxis!r})'
+        return f'Affine2(xAxis={self.xAxis!r},yAxis={self.yAxis!r}),origin={self.origin!r}'
 
     def __str__(self) -> str:
         return repr(self)
@@ -58,14 +65,18 @@ class Affine2:
             and self.xAxis == other.xAxis \
             and self.yAxis == other.yAxis
 
+    def __ne__(self,other):
+        eqResult = self == other
+        return eqResult if eqResult is NotImplemented else not eqResult
+
     def __hash__(self) -> int:
         return hash((self.origin,self.xAxis,self.yAxis))
 
     def copy(self) -> 'Affine2':
         '''
-        Return a new object as a copy.
+        Return a new object as a copy (self since Affine2 is immutable).
         '''
-        return Affine2(self.xAxis,self.yAxis,self.origin)
+        return self
 
     def apply(self, x, y = None) -> Vec2:
         '''
@@ -84,15 +95,21 @@ class Affine2:
     def isSingular(self,tol=1e-9) -> bool:
         '''
         Uses a tolerance to determine if the linear component is singular.
+        This normalizes vectors and is tolerant of different scales.
         '''
-        # |det| / scale == |sin(theta)|, angle between axes
-        scale = self.xAxis.magnitude() * self.yAxis.magnitude()
-        return True if scale == 0.0 else abs(self.determinant()) / scale <= tol
+        mx = self.xAxis.magnitude()
+        my = self.yAxis.magnitude()
+        if mx == 0.0 or my == 0.0:
+            return True
+        # normalize to avoid overflow, check cross (equal to determinant)
+        xAxis = self.xAxis / mx
+        yAxis = self.yAxis / my
+        return abs(Vec2.cross(xAxis,yAxis)) <= tol
 
     def inverse(self,tol=1e-9) -> 'Affine2':
         '''
         Return the inverse transformation.
-        Throws if the linear part is singular.
+        Throws if the linear part is singular (checked with isSingular(tol)).
         '''
         if self.isSingular(tol):
             raise ValueError('cannot invert a singular Affine2')
@@ -101,6 +118,7 @@ class Affine2:
         # split up the linear part into
         # [ a b ]
         # [ c d ]
+        # (xAxis and yAxis are column vectors)
         det = self.determinant()
         a,c = self.xAxis
         b,d = self.yAxis
@@ -121,20 +139,21 @@ class Affine2:
         '''
         True if the transformation is a translation and uniform scale, no skew.
         This allows transformations that reflect the x/y orientation.
+        Returns False for singular and zero scale transformations.
+        Checks if transformation is singular with isSingular(tol).
         '''
         mx = self.xAxis.magnitude()
         my = self.yAxis.magnitude()
         if mx == 0.0 or my == 0.0:
             return False
         # check that the scaling magnitude is the same in both axes
-        # compare ratio to 1.0 to be robust against scaling
-        if abs(mx/my - 1.0) > tol:
+        if abs(mx-my) > tol*max(mx,my):
             return False
-        # check that the axes are perpendicular
+        # check that the axes are orthogonal
         # normalize axis directions to be robust against scaling
-        xAxisDir = self.xAxis.normalize()
-        yAxisDir = self.yAxis.normalize()
-        return abs(xAxisDir @ yAxisDir) <= tol
+        xAxis = self.xAxis / mx
+        yAxis = self.yAxis / my
+        return abs(xAxis@yAxis) <= tol
 
     def compose(self,other) -> 'Affine2':
         '''
