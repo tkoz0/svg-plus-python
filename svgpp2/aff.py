@@ -181,7 +181,7 @@ class Affine2:
         return Affine2()
 
     @staticmethod
-    def fromBasis(xAxis:Vec2, yAxis:Vec2, origin:Vec2) -> 'Affine2':
+    def fromBasis(xAxis,yAxis,origin) -> 'Affine2':
         '''
         Affine transformation from vectors. Same as constructor parameters.
         '''

@@ -131,7 +131,7 @@ class Vec2:
         yield self.x
         yield self.y
 
-    def __getitem__(self,index):
+    def __getitem__(self,index) -> float:
         if index == 0:
             return self.x
         if index == 1:
