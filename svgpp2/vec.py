@@ -1,5 +1,5 @@
 '''
-Vector types
+Vector types for points and directions in math calculations
 
 Design notes:
 - immutable to be reusable, avoid unexpected changes, and be hashable
@@ -115,7 +115,9 @@ class Vec2:
         return [self.x,self.y]
 
     def __hash__(self) -> int:
-        return hash(self.asTuple())
+        # this should work ok with 0.0 vs -0.0 since
+        # hash(0.0) == hash(-0.0)
+        return hash((self.x,self.y))
 
     def __bool__(self):
         # this can be unintuitive so choosing to avoid bool conversion
@@ -190,6 +192,9 @@ class Vec2:
         return Vec2(self.x/k, self.y/k)
 
     def __matmul__(self,other) -> float:
+        '''
+        Computes the dot product of 2 vectors.
+        '''
         try:
             other = Vec2(other)
         except (TypeError,ValueError):
@@ -207,7 +212,7 @@ class Vec2:
 
     def copy(self) -> 'Vec2':
         '''
-        Return a new object as a copy (self since Vec2 is immutable).
+        Return self (since Vec2 is immutable).
         '''
         return self
 
@@ -327,7 +332,7 @@ class Vec2:
     def reflectAcrossPlane(self,normal) -> 'Vec2':
         '''
         Reflect across a plane given by its normal vector.
-        This keeps the same orthogonal component and negates parallel component.
+        This keeps the same orthogonal component and negates the parallel component.
         Throws if normal vector is zero, not reliable if nearly zero.
         '''
         normal = Vec2(normal)
@@ -338,7 +343,7 @@ class Vec2:
     def reflectAlongAxis(self,axis) -> 'Vec2':
         '''
         Reflect along an axis vector.
-        This keeps the same parallel component and negates orthogonal component.
+        This keeps the same parallel component and negates the orthogonal component.
         Throws if axis vector is zero, not reliable if nearly zero.
         '''
         axis = Vec2(axis)

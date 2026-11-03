@@ -1,5 +1,5 @@
 '''
-Affine transformations
+Affine transformations for basic math calculations
 
 Design notes:
 - immutable to be reusable, avoid unexpected changes, and be hashable
@@ -37,14 +37,20 @@ class Affine2:
         The defaults are for the identity transformation.
         Shared defaults are fine since Vec2 is immutable.
         '''
-        xAxis = Vec2(xAxis)
-        yAxis = Vec2(yAxis)
-        origin = Vec2(origin)
-        # bypass the __setattr__ exception for construction
-        # Affine2.__setattr__ throws to enforce immutability
-        object.__setattr__(self,'xAxis',xAxis)
-        object.__setattr__(self,'yAxis',yAxis)
-        object.__setattr__(self,'origin',origin)
+        if isinstance(xAxis,Affine2):
+            affine = xAxis
+            object.__setattr__(self,'xAxis',affine.xAxis)
+            object.__setattr__(self,'yAxis',affine.yAxis)
+            object.__setattr__(self,'origin',affine.origin)
+        else:
+            xAxis = Vec2(xAxis)
+            yAxis = Vec2(yAxis)
+            origin = Vec2(origin)
+            # bypass the __setattr__ exception for construction
+            # Affine2.__setattr__ throws to enforce immutability
+            object.__setattr__(self,'xAxis',xAxis)
+            object.__setattr__(self,'yAxis',yAxis)
+            object.__setattr__(self,'origin',origin)
 
     def __setattr__(self,name,value):
         raise AttributeError('Affine2 is immutable')
@@ -74,7 +80,7 @@ class Affine2:
 
     def copy(self) -> 'Affine2':
         '''
-        Return a new object as a copy (self since Affine2 is immutable).
+        Return self (since Affine2 is immutable).
         '''
         return self
 
@@ -90,6 +96,7 @@ class Affine2:
         '''
         Determinant of the linear component.
         '''
+        # cross product of columns works for 2x2 matrix
         return Vec2.cross(self.xAxis,self.yAxis)
 
     def isSingular(self,tol=1e-9) -> bool:
@@ -158,7 +165,7 @@ class Affine2:
     def compose(self,other) -> 'Affine2':
         '''
         Compose 2 transformations. This is in math order, so other is applied
-        before self.
+        before self when used to transform a point.
         '''
         if not isinstance(other,Affine2):
             raise ValueError('can only compose Affine2 with another Affine2')
@@ -201,16 +208,11 @@ class Affine2:
         '''
         Scale axes affine transformation. No translation/skew.
         If given one number, scales both axes equally.
-        Otherwise a Vec2 is constructed from the args for axis scales.
         '''
         if sy is None: # try single float parameter to scale both axes equally
-            try:
-                s = float(sx)
-                return Affine2(Vec2(s,0.0),Vec2(0.0,s))
-            except (TypeError,ValueError):
-                pass
-        scales = Vec2(sx,sy)
-        return Affine2(Vec2(scales.x,0.0),Vec2(0.0,scales.y))
+            sx = float(sx)
+            return Affine2(Vec2(sx,0.0),Vec2(0.0,sx))
+        return Affine2(Vec2(float(sx),0.0),Vec2(0.0,float(sy)))
 
     @staticmethod
     def rotateRad(theta) -> 'Affine2':
