@@ -6,8 +6,9 @@ Design notes:
 - no tolerances which depend on scale, to support very large and very small
 '''
 
-import math
 from .vec import Vec2
+
+import math
 
 __all__ = [
     'Affine2',
