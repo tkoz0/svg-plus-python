@@ -134,6 +134,10 @@ class Vec2:
         yield self.y
 
     def __getitem__(self,index) -> float:
+        '''
+        Vector components can be accessed at indexes 0 and 1.
+        Raises IndexError otherwise.
+        '''
         if index == 0:
             return self.x
         if index == 1:
@@ -282,7 +286,7 @@ class Vec2:
     def angleBetweenRad(left,right) -> float:
         '''
         Angle between 2 vectors in radians from 0 to pi.
-        Throws if either vector is zero.
+        Raises ValueError if either vector is zero.
         This is not reliable if either vector is nearly zero.
         '''
         left = Vec2(left)
@@ -300,7 +304,7 @@ class Vec2:
     def angleBetweenDeg(left,right) -> float:
         '''
         Angle between 2 vectors in degrees from 0 to 180.
-        Throws if either vector is zero.
+        Raises ValueError if either vector is zero.
         This is not reliable if either vector is nearly zero.
         '''
         return math.degrees(Vec2.angleBetweenRad(left,right))
@@ -309,7 +313,7 @@ class Vec2:
         '''
         Projection of self onto other vector.
         This is the component parallel to other.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if vector is zero, not reliable if nearly zero.
         '''
         other = Vec2(other)
         if other.isZero():
@@ -321,7 +325,7 @@ class Vec2:
         '''
         Rejection of self from other vector.
         This is the component orthogonal to other.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if vector is zero, not reliable if nearly zero.
         '''
         other = Vec2(other)
         if other.isZero():
@@ -333,7 +337,7 @@ class Vec2:
         '''
         Reflect across a plane given by its normal vector.
         This keeps the same orthogonal component and negates the parallel component.
-        Throws if normal vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if normal vector is zero, not reliable if nearly zero.
         '''
         normal = Vec2(normal)
         if normal.isZero():
@@ -344,7 +348,7 @@ class Vec2:
         '''
         Reflect along an axis vector.
         This keeps the same parallel component and negates the orthogonal component.
-        Throws if axis vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if axis vector is zero, not reliable if nearly zero.
         '''
         axis = Vec2(axis)
         if axis.isZero():
@@ -366,7 +370,7 @@ class Vec2:
     def normalize(self) -> 'Vec2':
         '''
         Return a new Vec2 unit vector with the same direction.
-        If self is 0 or near 0, this may be unreliable or throw.
+        Raises ZeroDivisionError if self is zero, unreliable if near zero.
         '''
         if self.isZero():
             raise ZeroDivisionError('cannot normalize the zero vector')
@@ -383,7 +387,7 @@ class Vec2:
     def angleRad(self) -> float:
         '''
         Polar angle in radians from 0 to 2pi.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ValueError if vector is zero, not reliable if nearly zero.
         '''
         if self.isZero():
             raise ValueError('angle is undefined for the zero vector')
@@ -396,14 +400,14 @@ class Vec2:
     def angleDeg(self) -> float:
         '''
         Polar angle in degrees from 0 to 360.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ValueError if vector is zero, not reliable if nearly zero.
         '''
         return math.degrees(self.angleRad())
 
     def signedAngleRad(self) -> float:
         '''
         Polar angle in radians from -pi to +pi.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ValueError if vector is zero, not reliable if nearly zero.
         '''
         if self.isZero():
             raise ValueError('angle is undefined for the zero vector')
@@ -412,7 +416,7 @@ class Vec2:
     def signedAngleDeg(self) -> float:
         '''
         Polar angle in degrees from -180 to +180.
-        Throws if vector is zero, not reliable if nearly zero.
+        Raises ValueError if vector is zero, not reliable if nearly zero.
         '''
         return math.degrees(self.signedAngleRad())
 

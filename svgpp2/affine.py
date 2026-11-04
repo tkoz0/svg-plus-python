@@ -117,7 +117,7 @@ class Affine2:
     def inverse(self,tol=1e-9) -> 'Affine2':
         '''
         Return the inverse transformation.
-        Throws if the linear part is singular (checked with isSingular(tol)).
+        Raises ValueError if the linear part is singular (checked with isSingular(tol)).
         '''
         if self.isSingular(tol):
             raise ValueError('cannot invert a singular Affine2')
@@ -165,8 +165,8 @@ class Affine2:
 
     def compose(self,other) -> 'Affine2':
         '''
-        Compose 2 transformations. This is in math order, so other is applied
-        before self when used to transform a point.
+        Compose 2 affine transformations. This is in math/matrix order, so other
+        is applied before self when used to transform a point.
         '''
         if not isinstance(other,Affine2):
             raise ValueError('can only compose Affine2 with another Affine2')
