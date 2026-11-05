@@ -11,7 +11,7 @@ from .vec import Vec2
 import math
 
 __all__ = [
-    'Affine2',
+    'Affine2'
 ]
 
 class Affine2:
@@ -29,29 +29,40 @@ class Affine2:
     __slots__ = ('xAxis','yAxis','origin')
 
     def __init__(self,
-        xAxis = Vec2(1,0),
-        yAxis = Vec2(0,1),
-        origin = Vec2(0,0)
+        xAxis: Vec2|tuple|list|Affine2 = Vec2(1,0),
+        yAxis: Vec2|tuple|list = Vec2(0,1),
+        origin: Vec2|tuple|list = Vec2(0,0)
     ):
         '''
         Construction supported from 3 objects convertible to Vec2.
+        If the first arg (xAxis) is a different type, it may be another Affine2,
+        or a tuple/list of length 6. If given a tuple/list (a,b,c,d,e,f) then it
+        constructs with xAxis=Vec2(a,b), yAxis=Vec2(c,d), origin=Vec2(e,f).
+
         The defaults are for the identity transformation.
         Shared defaults are fine since Vec2 is immutable.
         '''
         if isinstance(xAxis,Affine2):
             affine = xAxis
-            object.__setattr__(self,'xAxis',affine.xAxis)
-            object.__setattr__(self,'yAxis',affine.yAxis)
-            object.__setattr__(self,'origin',affine.origin)
+            valueXAxis = affine.xAxis
+            valueYAxis = affine.yAxis
+            valueOrigin = affine.origin
+        elif isinstance(xAxis,(tuple,list)):
+            if len(xAxis) != 6:
+                raise ValueError('Affine2 from tuple/list requires length 6')
+            a,b,c,d,e,f = xAxis
+            valueXAxis = Vec2(a,b)
+            valueYAxis = Vec2(c,d)
+            valueOrigin = Vec2(e,f)
         else:
-            xAxis = Vec2(xAxis)
-            yAxis = Vec2(yAxis)
-            origin = Vec2(origin)
-            # bypass the __setattr__ exception for construction
-            # Affine2.__setattr__ throws to enforce immutability
-            object.__setattr__(self,'xAxis',xAxis)
-            object.__setattr__(self,'yAxis',yAxis)
-            object.__setattr__(self,'origin',origin)
+            valueXAxis = Vec2(xAxis)
+            valueYAxis = Vec2(yAxis)
+            valueOrigin = Vec2(origin)
+        # bypass the __setattr__ exception for construction
+        # Affine2.__setattr__ throws to enforce immutability
+        object.__setattr__(self,'xAxis',valueXAxis)
+        object.__setattr__(self,'yAxis',valueYAxis)
+        object.__setattr__(self,'origin',valueOrigin)
 
     def __setattr__(self,name,value):
         raise AttributeError('Affine2 is immutable')
@@ -85,7 +96,7 @@ class Affine2:
         '''
         return self
 
-    def apply(self, x, y = None) -> Vec2:
+    def apply(self, x: float|Vec2|tuple|list|None, y: float|None = None) -> Vec2:
         '''
         Apply this transformation to a given point.
         The arguments are converted to Vec2.
@@ -100,11 +111,13 @@ class Affine2:
         # cross product of columns works for 2x2 matrix
         return Vec2.cross(self.xAxis,self.yAxis)
 
-    def isSingular(self,tol=1e-9) -> bool:
+    def isSingular(self, tol: float = 1e-9) -> bool:
         '''
         Uses a tolerance to determine if the linear component is singular.
         This normalizes vectors and is tolerant of different scales.
         '''
+        if tol < 0.0:
+            raise ValueError('tol must be >= 0')
         mx = self.xAxis.magnitude()
         my = self.yAxis.magnitude()
         if mx == 0.0 or my == 0.0:
@@ -114,7 +127,7 @@ class Affine2:
         yAxis = self.yAxis / my
         return abs(Vec2.cross(xAxis,yAxis)) <= tol
 
-    def inverse(self,tol=1e-9) -> 'Affine2':
+    def inverse(self, tol: float = 1e-9) -> Affine2:
         '''
         Return the inverse transformation.
         Raises ValueError if the linear part is singular (checked with isSingular(tol)).
@@ -143,13 +156,15 @@ class Affine2:
             Vec2(oxI,oyI)
         )
 
-    def isUniform(self,tol=1e-9) -> bool:
+    def isUniform(self, tol: float = 1e-9) -> bool:
         '''
         True if the transformation is a translation and uniform scale, no skew.
         This allows transformations that reflect the x/y orientation.
         Returns False for singular and zero scale transformations.
         Checks if transformation is singular with isSingular(tol).
         '''
+        if tol < 0.0:
+            raise ValueError('tol must be >= 0')
         mx = self.xAxis.magnitude()
         my = self.yAxis.magnitude()
         if mx == 0.0 or my == 0.0:
@@ -163,13 +178,12 @@ class Affine2:
         yAxis = self.yAxis / my
         return abs(xAxis@yAxis) <= tol
 
-    def compose(self,other) -> 'Affine2':
+    def compose(self, other: Affine2|tuple|list) -> Affine2:
         '''
         Compose 2 affine transformations. This is in math/matrix order, so other
         is applied before self when used to transform a point.
         '''
-        if not isinstance(other,Affine2):
-            raise ValueError('can only compose Affine2 with another Affine2')
+        other = Affine2(other)
         # composition requires a little messy algebra
         # if other=Ax+b and self=A'x+b' then the composition is
         # A'(Ax+b)+b' = A'Ax + A'b + b'
@@ -182,21 +196,22 @@ class Affine2:
         )
 
     @staticmethod
-    def identity() -> 'Affine2':
+    def identity() -> Affine2:
         '''
         Identity affine transformation.
         '''
         return Affine2()
 
     @staticmethod
-    def fromBasis(xAxis,yAxis,origin) -> 'Affine2':
+    def fromBasis(xAxis: Vec2|tuple|list, yAxis: Vec2|tuple|list,
+            origin:Vec2|tuple|list) -> Affine2:
         '''
         Affine transformation from vectors. Same as constructor parameters.
         '''
         return Affine2(xAxis,yAxis,origin)
 
     @staticmethod
-    def translate(tx, ty = None) -> 'Affine2':
+    def translate(tx: float|Vec2|tuple|list|None, ty: float|None = None) -> Affine2:
         '''
         Translation affine transformation. No scale/skew.
         Arguments are constructed into a Vec2.
@@ -205,7 +220,7 @@ class Affine2:
         return Affine2(origin=origin)
 
     @staticmethod
-    def scale(sx, sy = None) -> 'Affine2':
+    def scale(sx: float, sy: float|None = None) -> Affine2:
         '''
         Scale axes affine transformation. No translation/skew.
         If given one number, scales both axes equally.
@@ -213,10 +228,11 @@ class Affine2:
         if sy is None: # try single float parameter to scale both axes equally
             sx = float(sx)
             return Affine2(Vec2(sx,0.0),Vec2(0.0,sx))
-        return Affine2(Vec2(float(sx),0.0),Vec2(0.0,float(sy)))
+        else:
+            return Affine2(Vec2(float(sx),0.0),Vec2(0.0,float(sy)))
 
     @staticmethod
-    def rotateRad(theta) -> 'Affine2':
+    def rotateRad(theta:float) -> Affine2:
         '''
         Rotation affine transformation (radians).
         For y-up and positive theta, this is counterclockwise.
@@ -228,7 +244,7 @@ class Affine2:
         return Affine2(Vec2(c,s),Vec2(-s,c))
 
     @staticmethod
-    def rotateDeg(theta) -> 'Affine2':
+    def rotateDeg(theta:float) -> Affine2:
         '''
         Rotation affine transformation (degrees).
         For y-up and positive theta, this is counterclockwise.
