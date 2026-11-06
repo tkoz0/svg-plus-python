@@ -25,7 +25,7 @@ def _checkTol(tol: float, /) -> float:
     '''
     tol = float(tol)
     if not math.isfinite(tol) or tol < 0.0:
-        raise ValueError('tolerance must be finite and >= 0')
+        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
     return tol
 
 class Vec2:
@@ -64,7 +64,7 @@ class Vec2:
             if y is not None:
                 raise ValueError('Vec2 init from tuple/list only takes one argument')
             if len(x) != 2:
-                raise ValueError('Vec2 init from tuple/list requires length 2')
+                raise ValueError(f'Vec2 init from tuple/list requires length 2, provided {len(x)}')
             valueX = float(x[0])
             valueY = float(x[1])
         elif x is None and y is None:
@@ -90,7 +90,10 @@ class Vec2:
         theta=0 is at the +x axis.
         For y-up, the rotation is counterclockwise.
         For y-down, the rotation is clockwise.
+        Note that this allows a negative radius.
         '''
+        if not math.isfinite(r) or not math.isfinite(theta):
+            raise OverflowError(f'Vec2 polar args contains inf or nan: r={r!r}, theta={theta!r}')
         r = float(r)
         theta = float(theta)
         return Vec2(r*math.cos(theta), r*math.sin(theta))
@@ -102,6 +105,7 @@ class Vec2:
         theta=0 is at the +x axis.
         For y-up, the rotation is counterclockwise.
         For y-down, the rotation is clockwise.
+        Note that this allows a negative radius.
         '''
         return Vec2.fromPolarRad(r,math.radians(theta))
 
@@ -251,9 +255,11 @@ class Vec2:
         '''
         try:
             k = float(other)
-            return Vec2(self.x*k, self.y*k)
         except (TypeError,ValueError):
             return NotImplemented
+        if not math.isfinite(k):
+            raise ValueError(f'Vec2 multiplication scalar must be finite, not {k!r}')
+        return Vec2(self.x*k, self.y*k)
 
     def __rmul__(self, other) -> Vec2:
         '''
@@ -261,9 +267,11 @@ class Vec2:
         '''
         try:
             k = float(other)
-            return Vec2(k*self.x, k*self.y)
         except (TypeError,ValueError):
             return NotImplemented
+        if not math.isfinite(k):
+            raise ValueError(f'Vec2 multiplication scalar must be finite, not {k!r}')
+        return Vec2(k*self.x, k*self.y)
 
     def __truediv__(self, other) -> Vec2:
         '''
@@ -275,6 +283,8 @@ class Vec2:
             k = float(other)
         except (TypeError,ValueError):
             return NotImplemented
+        if not math.isfinite(k):
+            raise ValueError(f'Vec2 division scalar must be finite, not {k!r}')
         if k == 0.0:
             raise ZeroDivisionError('cannot divide a Vec2 by zero')
         return Vec2(self.x/k, self.y/k)
@@ -293,7 +303,7 @@ class Vec2:
             # coordinate scales roughly 10^-150 to 10^150 should be ok
             # possibly more robust by normalizing then multiplying scales
             raise OverflowError(f'Vec2 dot product result is inf/nan: '
-                f'{self!r} @ {other!r} = {result}')
+                f'{self!r} @ {other!r} = {result!r}')
         return result
 
     def __rmatmul__(self, other) -> float:
@@ -310,7 +320,7 @@ class Vec2:
             # coordinate scales roughly 10^-150 to 10^150 should be ok
             # possibly more robust by normalizing then multiplying scales
             raise OverflowError(f'Vec2 dot product result is inf/nan: '
-                f'{self!r} @ {other!r} = {result}')
+                f'{self!r} @ {other!r} = {result!r}')
         return result
 
     def __neg__(self) -> Vec2:
@@ -372,7 +382,8 @@ class Vec2:
             # note: this is an unsupported pathological case
             # coordinate scales roughly 10^-150 to 10^150 should be ok
             # possibly more robust by normalizing then multiplying scales
-            raise OverflowError(f'Vec2 cross product overflowed: {left!r} x {right!r}')
+            raise OverflowError(f'Vec2 cross product result is inf or nan: '
+                f'{left!r} x {right!r} = {result!r}')
         return result
 
     @staticmethod
@@ -394,6 +405,8 @@ class Vec2:
         left = Vec2(left)
         right = Vec2(right)
         t = float(t)
+        if not math.isfinite(t):
+            raise OverflowError(f'Vec2 lerp constant not finite: {t!r}')
         # note: can overflow in unsupported pathological cases
         return Vec2(left.x + (right.x-left.x)*t, left.y + (right.y-left.y)*t)
 
@@ -583,7 +596,8 @@ class Vec2:
         '''
         if self.isZero():
             raise ValueError('angle is undefined for the zero vector')
-        return math.atan2(self.y,self.x)
+        angle = math.atan2(self.y,self.x)
+        return 0.0 if angle == 0.0 else angle
 
     def signedAngleDeg(self) -> float:
         '''
@@ -601,6 +615,8 @@ class Vec2:
         For y-up and positive theta, this is counterclockwise.
         For y-down and positive theta, this is clockwise.
         '''
+        if not math.isfinite(theta):
+            raise OverflowError(f'Vec2 rotation angle not finite: {theta!r}')
         c = math.cos(theta)
         s = math.sin(theta)
         return Vec2(self.x*c - self.y*s, self.x*s + self.y*c)
@@ -626,13 +642,16 @@ class Vec2:
         right = Vec2(right)
         # note: can overflow in unsupported pathological cases
         dist = Vec2.distance(left,right)
+        if dist <= absTol:
+            return True
         scale = max(left.magnitude(),right.magnitude())
-        return dist <= max(scale*relTol, absTol)
+        return dist <= scale*relTol
 
     @staticmethod
     def areParallel(left: Vec2|tuple|list, right: Vec2|tuple|list, *, tol: float = 1e-9) -> bool:
         '''
         Check if 2 vectors are parallel up to a given tolerance.
+        Note that this includes opposite direction (anti parallel) vectors.
 
         This handles normalized direction only for any nonzero vectors. If an
         input can be close enough to zero to be meaningless, then client code
