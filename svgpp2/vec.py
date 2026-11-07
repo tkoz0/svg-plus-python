@@ -12,16 +12,21 @@ Design notes:
 '''
 
 import math
-from typing import Iterator
+from typing import Iterator,Union
 
 __all__ = [
-    'Vec2'
+    'Vec2',
+    'Vec2LikeType'
 ]
+
+# Vec2 and related types that express its quantities.
+Vec2LikeType = Union['Vec2',tuple,list]
 
 def _checkTol(tol: float, /) -> float:
     '''
     Return the tolerance converted to float.
-    Throw TypeError if not float and ValueError if not finite and >= 0.
+    Raises TypeError if not convertible to float.
+    Raises ValueError if it is inf/nan or negative.
     '''
     tol = float(tol)
     if not math.isfinite(tol) or tol < 0.0:
@@ -47,7 +52,7 @@ class Vec2:
     y: float
     __slots__ = ('x','y')
 
-    def __init__(self, x: float|Vec2|tuple|list|None = None, y: float|None = None):
+    def __init__(self, x: float|Vec2LikeType|None = None, y: float|None = None):
         '''
         Construction supported from
         - 2 scalars which are converted to float
@@ -370,7 +375,7 @@ class Vec2:
         return result
 
     @staticmethod
-    def cross(left: Vec2|tuple|list, right: Vec2|tuple|list) -> float:
+    def cross(left: Vec2LikeType, right: Vec2LikeType) -> float:
         '''
         Cross product (a scalar for 2D vectors).
         This value is the z coordinate when thinking of Vec2 in the x-y plane.
@@ -387,7 +392,7 @@ class Vec2:
         return result
 
     @staticmethod
-    def distance(left: Vec2|tuple|list, right: Vec2|tuple|list) -> float:
+    def distance(left: Vec2LikeType, right: Vec2LikeType) -> float:
         '''
         Distance between 2 vectors.
         '''
@@ -397,7 +402,7 @@ class Vec2:
         return abs(left-right)
 
     @staticmethod
-    def lerp(left: Vec2|tuple|list, right: Vec2|tuple|list, t: float) -> Vec2:
+    def lerp(left: Vec2LikeType, right: Vec2LikeType, t: float) -> Vec2:
         '''
         Linear interpolation of 2 vectors.
         Generally we would use t in [0,1] but it is not restricted to that.
@@ -411,7 +416,7 @@ class Vec2:
         return Vec2(left.x + (right.x-left.x)*t, left.y + (right.y-left.y)*t)
 
     @staticmethod
-    def midpoint(left: Vec2|tuple|list, right: Vec2|tuple|list) -> Vec2:
+    def midpoint(left: Vec2LikeType, right: Vec2LikeType) -> Vec2:
         '''
         Midpoint of 2 vectors.
         '''
@@ -434,7 +439,7 @@ class Vec2:
     # - reflection
 
     @staticmethod
-    def angleBetweenRad(left: Vec2|tuple|list, right: Vec2|tuple|list) -> float:
+    def angleBetweenRad(left: Vec2LikeType, right: Vec2LikeType) -> float:
         '''
         Angle between 2 vectors in radians from 0 to pi.
 
@@ -455,7 +460,7 @@ class Vec2:
         return math.atan2(abs(Vec2.cross(left,right)), left@right)
 
     @staticmethod
-    def angleBetweenDeg(left: Vec2|tuple|list, right: Vec2|tuple|list) -> float:
+    def angleBetweenDeg(left: Vec2LikeType, right: Vec2LikeType) -> float:
         '''
         Angle between 2 vectors in degrees from 0 to 180.
 
@@ -466,7 +471,7 @@ class Vec2:
         '''
         return math.degrees(Vec2.angleBetweenRad(left,right))
 
-    def projectOnto(self, other: Vec2|tuple|list) -> Vec2:
+    def projectOnto(self, other: Vec2LikeType) -> Vec2:
         '''
         Projection of self onto other vector.
         This is the component parallel to other.
@@ -482,7 +487,7 @@ class Vec2:
         other = other.normalize()
         return (self@other)*other
 
-    def rejectFrom(self, other: Vec2|tuple|list) -> Vec2:
+    def rejectFrom(self, other: Vec2LikeType) -> Vec2:
         '''
         Rejection of self from other vector.
         This is the component orthogonal to other.
@@ -497,7 +502,7 @@ class Vec2:
             raise ZeroDivisionError('rejectFrom requires a nonzero vector')
         return self - self.projectOnto(other)
 
-    def reflectAcrossPlane(self, normal: Vec2|tuple|list) -> Vec2:
+    def reflectAcrossPlane(self, normal: Vec2LikeType) -> Vec2:
         '''
         Reflect across a plane given by its normal vector.
         This keeps the same orthogonal component and negates the parallel component.
@@ -512,7 +517,7 @@ class Vec2:
             raise ZeroDivisionError('reflectAcrossPlane requires a nonzero normal vector')
         return self - 2.0*self.projectOnto(normal)
 
-    def reflectAlongAxis(self, axis: Vec2|tuple|list) -> Vec2:
+    def reflectAlongAxis(self, axis: Vec2LikeType) -> Vec2:
         '''
         Reflect along an axis vector.
         This keeps the same parallel component and negates the orthogonal component.
@@ -630,7 +635,7 @@ class Vec2:
         return self.rotateRad(math.radians(theta))
 
     @staticmethod
-    def areNearlyEqual(left: Vec2|tuple|list, right: Vec2|tuple|list, *,
+    def areNearlyEqual(left: Vec2LikeType, right: Vec2LikeType, *,
             relTol: float = 1e-9, absTol: float = 0.0) -> bool:
         '''
         Check if 2 vectors are almost equal with provided tolerances.
@@ -648,7 +653,7 @@ class Vec2:
         return dist <= scale*relTol
 
     @staticmethod
-    def areParallel(left: Vec2|tuple|list, right: Vec2|tuple|list, *, tol: float = 1e-9) -> bool:
+    def areParallel(left: Vec2LikeType, right: Vec2LikeType, *, tol: float = 1e-9) -> bool:
         '''
         Check if 2 vectors are parallel up to a given tolerance.
         Note that this includes opposite direction (anti parallel) vectors.
@@ -668,7 +673,7 @@ class Vec2:
         return abs(Vec2.cross(left,right)) <= tol
 
     @staticmethod
-    def areOrthogonal(left: Vec2|tuple|list, right: Vec2|tuple|list, *, tol: float = 1e-9) -> bool:
+    def areOrthogonal(left: Vec2LikeType, right: Vec2LikeType, *, tol: float = 1e-9) -> bool:
         '''
         Check if 2 vectors are orthogonal up to a given tolerance.
 
