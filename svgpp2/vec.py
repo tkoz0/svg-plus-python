@@ -14,6 +14,8 @@ Design notes:
 import math
 from typing import Iterator,Union
 
+from .helpers import sincosRad
+
 __all__ = [
     'Vec2',
     'Vec2LikeType'
@@ -89,7 +91,7 @@ class Vec2:
         object.__setattr__(self,'y',valueY)
 
     @staticmethod
-    def fromPolarRad(r: float, theta: float) -> Vec2:
+    def fromPolarRad(r: float, thetaRad: float) -> Vec2:
         '''
         Construct from polar coordinates with theta in radians.
         theta=0 is at the +x axis.
@@ -97,14 +99,14 @@ class Vec2:
         For y-down, the rotation is clockwise.
         Note that this allows a negative radius.
         '''
-        if not math.isfinite(r) or not math.isfinite(theta):
-            raise OverflowError(f'Vec2 polar args contains inf or nan: r={r!r}, theta={theta!r}')
+        if not math.isfinite(r) or not math.isfinite(thetaRad):
+            raise OverflowError(f'Vec2 polar args contains inf or nan: r={r!r}, theta={thetaRad!r}')
         r = float(r)
-        theta = float(theta)
-        return Vec2(r*math.cos(theta), r*math.sin(theta))
+        thetaRad = float(thetaRad)
+        return Vec2(r*math.cos(thetaRad), r*math.sin(thetaRad))
 
     @staticmethod
-    def fromPolarDeg(r: float, theta: float) -> Vec2:
+    def fromPolarDeg(r: float, thetaDeg: float) -> Vec2:
         '''
         Construct from polar coordinates with theta in degrees.
         theta=0 is at the +x axis.
@@ -112,7 +114,7 @@ class Vec2:
         For y-down, the rotation is clockwise.
         Note that this allows a negative radius.
         '''
-        return Vec2.fromPolarRad(r,math.radians(theta))
+        return Vec2.fromPolarRad(r,math.radians(thetaDeg))
 
     def __setattr__(self, name, value):
         raise AttributeError('Vec2 is immutable')
@@ -652,25 +654,24 @@ class Vec2:
         v,mag = self.directionAndMagnitude()
         return (v.y,v.x,mag)
 
-    def rotateRad(self, theta: float) -> Vec2:
+    def rotateRad(self, thetaRad: float) -> Vec2:
         '''
         Rotate by theta radians.
         For y-up and positive theta, this is counterclockwise.
         For y-down and positive theta, this is clockwise.
         '''
-        if not math.isfinite(theta):
-            raise OverflowError(f'Vec2 rotation angle not finite: {theta!r}')
-        c = math.cos(theta)
-        s = math.sin(theta)
+        if not math.isfinite(thetaRad):
+            raise OverflowError(f'Vec2 rotation angle not finite: {thetaRad!r}')
+        s,c = sincosRad(thetaRad)
         return Vec2(self.x*c - self.y*s, self.x*s + self.y*c)
 
-    def rotateDeg(self, theta: float) -> Vec2:
+    def rotateDeg(self, thetaDeg: float) -> Vec2:
         '''
         Rotate by theta degrees.
         For y-up and positive theta, this is counterclockwise.
         For y-down and positive theta, this is clockwise.
         '''
-        return self.rotateRad(math.radians(theta))
+        return self.rotateRad(math.radians(thetaDeg))
 
     @staticmethod
     def areNearlyEqual(left: Vec2LikeType, right: Vec2LikeType, *,
