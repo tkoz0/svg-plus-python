@@ -476,7 +476,7 @@ class Vec2:
         Projection of self onto other vector.
         This is the component parallel to other.
 
-        Raises ZeroDivisionError if vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if vector is zero.
 
         This is not reliable if other vector is nearly zero due to roundoff
         error. It is fine if a vector is intentionally used for direction only.
@@ -492,7 +492,7 @@ class Vec2:
         Rejection of self from other vector.
         This is the component orthogonal to other.
 
-        Raises ZeroDivisionError if vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if vector is zero.
 
         This is not reliable if other vector is nearly zero due to roundoff
         error. It is fine if a vector is intentionally used for direction only.
@@ -507,7 +507,7 @@ class Vec2:
         Reflect across a plane given by its normal vector.
         This keeps the same orthogonal component and negates the parallel component.
 
-        Raises ZeroDivisionError if normal vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if normal vector is zero.
 
         This is not reliable if normal vector is nearly zero due to roundoff
         error. It is fine if a vector is intentionally used for direction only.
@@ -522,7 +522,7 @@ class Vec2:
         Reflect along an axis vector.
         This keeps the same parallel component and negates the orthogonal component.
 
-        Raises ZeroDivisionError if axis vector is zero, not reliable if nearly zero.
+        Raises ZeroDivisionError if axis vector is zero.
 
         This is not reliable if axis vector is nearly zero due to roundoff
         error. It is fine if a vector is intentionally used for direction only.
@@ -548,14 +548,30 @@ class Vec2:
         '''
         Return a new Vec2 unit vector with the same direction.
 
-        Raises ZeroDivisionError if self is zero, unreliable if near zero.
-        Raises OverflowError if self is too large to normalize.
+        Raises ZeroDivisionError if self is zero.
+
+        This is not reliable if self is nearly zero due to roundoff error.
         '''
         if self.isZero():
             raise ZeroDivisionError('cannot normalize the zero vector')
         # note: can overflow in unsupported pathological cases
         # the largest numbers can be handled by first dividing the max norm
         return self / abs(self)
+
+    def directionAndMagnitude(self) -> tuple[Vec2,float]:
+        '''
+        Simultaneously compute the direction and magnitude.
+        The direction is equivalent to calling .normalize().
+
+        Raises ZeroDivisionError if self is zero.
+
+        This is not reliable if self is nearly zero due to roundoff error.
+        '''
+        if self.isZero():
+            raise ZeroDivisionError('cannot normalize the zero vector')
+        # note: magnitude can overflow in unsupported pathological cases
+        mag = abs(self)
+        return (self/mag, mag)
 
     def perp(self) -> Vec2:
         '''
@@ -613,6 +629,28 @@ class Vec2:
         This is not reliable if self is close to zero due to roundoff error.
         '''
         return math.degrees(self.signedAngleRad())
+
+    def sincos(self) -> tuple[float,float]:
+        '''
+        Simultaneously compute the sine and cosine of the plane angle.
+
+        Raises ValueError if self is zero.
+        '''
+        if self.isZero():
+            raise ValueError('angle is undefined for the zero vector')
+        v = self.normalize()
+        return (v.y,v.x)
+
+    def sincosRadius(self) -> tuple[float,float,float]:
+        '''
+        Simultaneously compute the sine, cosine, and radius.
+
+        Raises ValueError if self is zero.
+        '''
+        if self.isZero():
+            raise ValueError('angle is undefined for the zero vector')
+        v,mag = self.directionAndMagnitude()
+        return (v.y,v.x,mag)
 
     def rotateRad(self, theta: float) -> Vec2:
         '''
