@@ -6,6 +6,7 @@ Design notes:
 - strictly avoids inf/nan and robust for huge/tiny scales
 '''
 
+from .helpers import sincosRad
 from .vec import Vec2,Vec2LikeType
 
 import math
@@ -331,22 +332,49 @@ class Affine2:
             return Affine2(Vec2(float(sx),0.0),Vec2(0.0,float(sy)))
 
     @staticmethod
-    def rotateRad(theta: float) -> Affine2:
+    def rotateRad(angleRad: float) -> Affine2:
         '''
         Rotation affine transformation (radians).
-        For y-up and positive theta, this is counterclockwise.
-        For y-down and positive theta, this is clockwise.
+        For y-up and positive angle, this is counterclockwise.
+        For y-down and positive angle, this is clockwise.
         '''
-        theta = float(theta)
-        c = math.cos(theta)
-        s = math.sin(theta)
+        angleRad = float(angleRad)
+        s,c = sincosRad(angleRad)
         return Affine2(Vec2(c,s),Vec2(-s,c))
 
     @staticmethod
-    def rotateDeg(theta: float) -> Affine2:
+    def rotateDeg(angleDeg: float) -> Affine2:
         '''
         Rotation affine transformation (degrees).
-        For y-up and positive theta, this is counterclockwise.
-        For y-down and positive theta, this is clockwise.
+        For y-up and positive angle, this is counterclockwise.
+        For y-down and positive angle, this is clockwise.
         '''
-        return Affine2.rotateRad(math.radians(theta))
+        return Affine2.rotateRad(math.radians(angleDeg))
+
+    @staticmethod
+    def skewXRad(angleRad: float) -> Affine2:
+        '''
+        Skew along X axis affine transformation (radians).
+        '''
+        return Affine2(yAxis=Vec2(math.tan(angleRad),1.0))
+
+    @staticmethod
+    def skewXDeg(angleDeg: float) -> Affine2:
+        '''
+        Skew along X axis affine transformation (degrees).
+        '''
+        return Affine2.skewXRad(math.radians(angleDeg))
+
+    @staticmethod
+    def skewYRad(angleRad: float) -> Affine2:
+        '''
+        Skew along Y axis affine transformation (radians).
+        '''
+        return Affine2(xAxis=Vec2(1.0,math.tan(angleRad)))
+
+    @staticmethod
+    def skewYDeg(angleDeg: float) -> Affine2:
+        '''
+        Skew along Y axis affine transformation (degrees).
+        '''
+        return Affine2.skewYRad(math.radians(angleDeg))
