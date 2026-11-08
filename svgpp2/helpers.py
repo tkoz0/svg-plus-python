@@ -3,10 +3,13 @@ Smaller utility functions
 '''
 
 import math
+from typing import Callable
 
 __all__ = [
     'formatNumber',
-    'numberFormatter'
+    'numberFormatter',
+    'sincosRad',
+    'sincosDeg'
 ]
 
 def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes = False) -> str:
@@ -31,7 +34,9 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes = 
     # convert to string
     if precision is None:
         result = str(num)
-    elif isinstance(precision,bool) or not isinstance(precision,int) or precision < 0:
+    elif isinstance(precision,bool):
+        raise TypeError('precision cannot be a bool')
+    elif not isinstance(precision,int) or precision < 0:
         raise ValueError(f'precision must be an int >= 0')
     else:
         result = f'{num:.{precision}f}'
@@ -39,14 +44,32 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes = 
     # handle trailing zeroes
     if removeTrailingZeroes and '.' in result:
         result = result.rstrip('0').rstrip('.')
+    # possible we end up with -0 depending on precision if number is negative
+    if result == '-0':
+        result = '0'
 
     return result
 
-def numberFormatter(precision: int|None = None, removeTrailingZeroes = False):
+def numberFormatter(precision: int|None = None, removeTrailingZeroes: bool = False) \
+        -> Callable[[float],str]:
     '''
     Return a function that formats a number using formatNumber with chosen precision and
     removeTrailingZeroes setting.
     '''
     def formatter(n: float):
         return formatNumber(n,precision,removeTrailingZeroes)
+    formatter.__name__ = (f'numberFormatter(precision={precision!r},'
+        f'removeTrailingZeroes={removeTrailingZeroes!r})')
     return formatter
+
+def sincosRad(angleRad: float) -> tuple[float,float]:
+    '''
+    Simultaneously compute sine and cosine. Angle is in radians.
+    '''
+    return (math.sin(angleRad),math.cos(angleRad))
+
+def sincosDeg(angleDeg: float) -> tuple[float,float]:
+    '''
+    Simultaneously compute sine and cosine. Angle is in degrees.
+    '''
+    return sincosRad(math.radians(angleDeg))
