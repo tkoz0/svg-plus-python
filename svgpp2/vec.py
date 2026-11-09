@@ -11,10 +11,10 @@ Design notes:
   should be much closer to unit scaling in practice
 '''
 
+from .helpers import sincosRad
+
 import math
 from typing import Iterator,Union
-
-from .helpers import sincosRad
 
 __all__ = [
     'Vec2',

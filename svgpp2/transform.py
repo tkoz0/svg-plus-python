@@ -8,7 +8,7 @@ Design notes:
 '''
 
 from .affine import Affine2,Affine2LikeType
-from .helpers import numberFormatter,sincosRad,sincosDeg
+from .helpers import numberFormatter,sincosDeg
 from .vec import Vec2,Vec2LikeType
 
 from abc import ABC, abstractmethod
