@@ -12,6 +12,30 @@ __all__ = [
     'sincosDeg'
 ]
 
+def _checkTol(tol: float, /) -> float:
+    '''
+    Return the tolerance converted to float.
+    Raises TypeError if not convertible to float.
+    Raises ValueError if it is inf/nan or negative.
+    '''
+    tol = float(tol)
+    if not math.isfinite(tol) or tol < 0.0:
+        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
+    return tol
+
+def _checkTolAndScale(tol: float, scale: float, /) -> tuple[float,float]:
+    '''
+    Checks that tolerance and scale are >= 0.
+    Return both tolerance and scale converted to float.
+    '''
+    tol = float(tol)
+    scale = float(scale)
+    if not math.isfinite(tol) or tol < 0.0:
+        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
+    if not math.isfinite(scale) or scale < 0.0:
+        raise ValueError(f'scale must be finite and >= 0, scale = {scale!r}')
+    return (tol,scale)
+
 def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: bool = False) -> str:
     '''
     Format a number for SVG output.

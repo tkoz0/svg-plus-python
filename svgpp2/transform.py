@@ -7,9 +7,9 @@ Design notes:
 - combines the SVG layer intention with further useful math operations
 '''
 
-from .affine import Affine2,Affine2LikeType
-from .helpers import numberFormatter,sincosDeg
-from .vec import Vec2,Vec2LikeType
+from .affine import Affine2, Affine2LikeType
+from .helpers import numberFormatter, sincosDeg, _checkTolAndScale
+from .vec import Vec2, Vec2LikeType
 
 from abc import ABC, abstractmethod
 import math
@@ -30,19 +30,6 @@ __all__ = [
 # This matches math/matrix order and nesting the transforms in the tree.
 
 _DEFAULT_NUM_FMT = numberFormatter()
-
-def _checkTolAndScale(tol: float, scale: float, /) -> tuple[float,float]:
-    '''
-    Checks that tolerance and scale are >= 0.
-    Return both tolerance and scale converted to float.
-    '''
-    tol = float(tol)
-    scale = float(scale)
-    if not math.isfinite(tol) or tol < 0.0:
-        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
-    if not math.isfinite(scale) or scale < 0.0:
-        raise ValueError(f'scale must be finite and >= 0, scale = {scale!r}')
-    return (tol,scale)
 
 def _checkAffine(affine: Affine2LikeType, /):
     '''

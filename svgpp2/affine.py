@@ -6,8 +6,8 @@ Design notes:
 - strictly avoids inf/nan and robust for huge/tiny scales
 '''
 
-from .helpers import sincosRad
-from .vec import Vec2,Vec2LikeType
+from .helpers import sincosRad, _checkTol
+from .vec import Vec2, Vec2LikeType
 
 import math
 from typing import Union
@@ -19,17 +19,6 @@ __all__ = [
 
 # Affine2 and related types that express its quantities.
 Affine2LikeType = Union['Affine2',tuple,list]
-
-def _checkTol(tol: float, /) -> float:
-    '''
-    Return the tolerance converted to float.
-    Raises TypeError if not convertible to float.
-    Raises ValueError if it is inf/nan or negative.
-    '''
-    tol = float(tol)
-    if not math.isfinite(tol) or tol < 0.0:
-        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
-    return tol
 
 class Affine2:
     '''

@@ -11,7 +11,7 @@ Design notes:
   should be much closer to unit scaling in practice
 '''
 
-from .helpers import sincosRad
+from .helpers import sincosRad, _checkTol
 
 import math
 from typing import Iterator,Union
@@ -23,17 +23,6 @@ __all__ = [
 
 # Vec2 and related types that express its quantities.
 Vec2LikeType = Union['Vec2',tuple,list]
-
-def _checkTol(tol: float, /) -> float:
-    '''
-    Return the tolerance converted to float.
-    Raises TypeError if not convertible to float.
-    Raises ValueError if it is inf/nan or negative.
-    '''
-    tol = float(tol)
-    if not math.isfinite(tol) or tol < 0.0:
-        raise ValueError(f'tolerance must be finite and >= 0, tol = {tol!r}')
-    return tol
 
 class Vec2:
     '''
