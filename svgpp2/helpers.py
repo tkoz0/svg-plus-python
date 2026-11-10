@@ -12,7 +12,7 @@ __all__ = [
     'sincosDeg'
 ]
 
-def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes = False) -> str:
+def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: bool = False) -> str:
     '''
     Format a number for SVG output.
 
@@ -21,6 +21,10 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes = 
     - int: number of digits after decimal point (must be >= 0)
 
     Trailing zeroes may be removed as well.
+
+    Note that scientific notation may be used for huge or tiny values. Although
+    this library tries to be robust for such scales, SVG diagram scales should
+    prefer familiar numbers like 1-100.
     '''
     # validate input num
     if isinstance(num,bool):
