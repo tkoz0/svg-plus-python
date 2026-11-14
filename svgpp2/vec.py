@@ -24,6 +24,24 @@ __all__ = [
 # Vec2 and related types that express its quantities.
 Vec2LikeType = Union['Vec2',tuple,list]
 
+def _checkFloatType(num: float) -> float:
+    '''
+    Wrapper for checking type of a float.
+    '''
+    if isinstance(num,bool) or not isinstance(num,(int,float)):
+        raise TypeError(f'expected a number (int or float), not {type(num).__name__}')
+    return float(num)
+
+def _checkOverflowVec2(x: float, y: float) -> Vec2:
+    '''
+    Wrapper for returning a Vec2 by construction.
+    Raises OverflowError if construction fails (nan or inf present).
+    '''
+    if not math.isfinite(x) or not math.isfinite(y):
+        raise OverflowError(f'calculation resulted in non finite float value: x={x!r}, y={y!r}')
+    else:
+        return Vec2(x,y)
+
 class Vec2:
     '''
     An immutable 2D vector.
@@ -61,8 +79,8 @@ class Vec2:
                 raise ValueError('Vec2 init from tuple/list only takes one argument')
             if len(x) != 2:
                 raise ValueError(f'Vec2 init from tuple/list requires length 2, provided {len(x)}')
-            valueX = float(x[0])
-            valueY = float(x[1])
+            valueX = _checkFloatType(x[0])
+            valueY = _checkFloatType(x[1])
         elif x is None and y is None:
             # default construction (zero vector)
             valueX = 0.0
@@ -70,10 +88,10 @@ class Vec2:
         else:
             if x is None or y is None:
                 raise ValueError('Vec2 init from scalars requires both components')
-            valueX = float(x)
-            valueY = float(y)
+            valueX = _checkFloatType(x)
+            valueY = _checkFloatType(y)
         if not math.isfinite(valueX) or not math.isfinite(valueY):
-            raise OverflowError(f'Vec2 value contains inf or nan: x={valueX!r}, y={valueY!r}')
+            raise ValueError(f'Vec2 value contains inf or nan: x={valueX!r}, y={valueY!r}')
         # bypass the __setattr__ exception for construction
         # Vec2.__setattr__ throws to enforce immutability
         object.__setattr__(self,'x',valueX)
@@ -88,10 +106,10 @@ class Vec2:
         For y-down, the rotation is clockwise.
         Note that this allows a negative radius.
         '''
+        r = _checkFloatType(r)
+        thetaRad = _checkFloatType(thetaRad)
         if not math.isfinite(r) or not math.isfinite(thetaRad):
-            raise OverflowError(f'Vec2 polar args contains inf or nan: r={r!r}, theta={thetaRad!r}')
-        r = float(r)
-        thetaRad = float(thetaRad)
+            raise ValueError(f'Vec2 polar args contains inf or nan: r={r!r}, theta={thetaRad!r}')
         return Vec2(r*math.cos(thetaRad), r*math.sin(thetaRad))
 
     @staticmethod
@@ -181,6 +199,8 @@ class Vec2:
 
         Raises IndexError otherwise.
         '''
+        if isinstance(index,bool) or  not isinstance(index,int):
+            raise TypeError(f'index must be int, not {type(index).__name__}')
         if index == 0:
             return self.x
         if index == 1:
@@ -191,7 +211,7 @@ class Vec2:
         '''
         How to reconstruct object, usually for pickle.
         '''
-        return (Vec2,self.asTuple())
+        return (Vec2,(self.x,self.y))
 
     def __copy__(self):
         '''
@@ -213,7 +233,7 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        return Vec2(self.x+other.x, self.y+other.y)
+        return _checkOverflowVec2(self.x+other.x, self.y+other.y)
 
     def __radd__(self, other) -> Vec2:
         '''
@@ -223,7 +243,7 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        return Vec2(other.x+self.x, other.y+self.y)
+        return _checkOverflowVec2(other.x+self.x, other.y+self.y)
 
     def __sub__(self, other) -> Vec2:
         '''
@@ -233,7 +253,7 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        return Vec2(self.x-other.x, self.y-other.y)
+        return _checkOverflowVec2(self.x-other.x, self.y-other.y)
 
     def __rsub__(self, other) -> Vec2:
         '''
@@ -243,31 +263,31 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        return Vec2(other.x-self.x, other.y-self.y)
+        return _checkOverflowVec2(other.x-self.x, other.y-self.y)
 
     def __mul__(self, other) -> Vec2:
         '''
         Vector multiplication by a scalar.
         '''
         try:
-            k = float(other)
+            k = _checkFloatType(other)
         except (TypeError,ValueError):
             return NotImplemented
         if not math.isfinite(k):
             raise ValueError(f'Vec2 multiplication scalar must be finite, not {k!r}')
-        return Vec2(self.x*k, self.y*k)
+        return _checkOverflowVec2(self.x*k, self.y*k)
 
     def __rmul__(self, other) -> Vec2:
         '''
         Vector multiplication by a scalar.
         '''
         try:
-            k = float(other)
+            k = _checkFloatType(other)
         except (TypeError,ValueError):
             return NotImplemented
         if not math.isfinite(k):
             raise ValueError(f'Vec2 multiplication scalar must be finite, not {k!r}')
-        return Vec2(k*self.x, k*self.y)
+        return _checkOverflowVec2(k*self.x, k*self.y)
 
     def __truediv__(self, other) -> Vec2:
         '''
@@ -276,14 +296,14 @@ class Vec2:
         Raises ZeroDivisionError if other is zero.
         '''
         try:
-            k = float(other)
+            k = _checkFloatType(other)
         except (TypeError,ValueError):
             return NotImplemented
         if not math.isfinite(k):
             raise ValueError(f'Vec2 division scalar must be finite, not {k!r}')
         if k == 0.0:
             raise ZeroDivisionError('cannot divide a Vec2 by zero')
-        return Vec2(self.x/k, self.y/k)
+        return _checkOverflowVec2(self.x/k, self.y/k)
 
     def __matmul__(self, other) -> float:
         '''
@@ -293,7 +313,7 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        result = self.x*other.x + self.y*other.y
+        result = math.fma(self.x, other.x, self.y*other.y)
         if not math.isfinite(result):
             # note: unsupported pathological case
             # coordinate scales roughly 10^-150 to 10^150 should be ok
@@ -310,7 +330,7 @@ class Vec2:
             other = Vec2(other)
         except (TypeError,ValueError):
             return NotImplemented
-        result = other.x*self.x + other.y*self.y
+        result = math.fma(other.x, self.x, other.y*self.y)
         if not math.isfinite(result):
             # note: unsupported pathological case
             # coordinate scales roughly 10^-150 to 10^150 should be ok
@@ -358,7 +378,7 @@ class Vec2:
         '''
         Squared Euclidean vector magnitude.
         '''
-        result = self.x*self.x + self.y*self.y
+        result = math.fma(self.x, self.x, self.y*self.y)
         if not math.isfinite(result):
             # note: unsupported pathological case
             # coordinate scales roughly 10^-150 to 10^150 should be ok
@@ -373,7 +393,7 @@ class Vec2:
         '''
         left = Vec2(left)
         right = Vec2(right)
-        result = left.x*right.y - left.y*right.x
+        result = math.fma(left.x, right.y, -left.y*right.x)
         if not math.isfinite(result):
             # note: this is an unsupported pathological case
             # coordinate scales roughly 10^-150 to 10^150 should be ok
@@ -404,7 +424,10 @@ class Vec2:
         if not math.isfinite(t):
             raise OverflowError(f'Vec2 lerp constant not finite: {t!r}')
         # note: can overflow in unsupported pathological cases
-        return Vec2(left.x + (right.x-left.x)*t, left.y + (right.y-left.y)*t)
+        diff = right - left
+        lerpX = math.fma(diff.x, t, left.x)
+        lerpY = math.fma(diff.y, t, left.y)
+        return _checkOverflowVec2(lerpX,lerpY)
 
     @staticmethod
     def midpoint(left: Vec2LikeType, right: Vec2LikeType) -> Vec2:
@@ -415,7 +438,7 @@ class Vec2:
         right = Vec2(right)
         # note: can overflow in unsupported pathological cases
         # unnecessary but the alternative (0.5*left + 0.5*right) can handle larger numbers
-        return Vec2((left.x+right.x)*0.5, (left.y+right.y)*0.5)
+        return _checkOverflowVec2((left.x+right.x)*0.5, (left.y+right.y)*0.5)
 
     # Some operations can benefit from being able to check if a vector is
     # close to zero to avoid accidental meaningless operations on something
@@ -527,13 +550,13 @@ class Vec2:
         '''
         Return a new Vec2 by changing the x coordinate.
         '''
-        return Vec2(float(x), self.y)
+        return Vec2(_checkFloatType(x), self.y)
 
     def withY(self, y: float) -> Vec2:
         '''
         Return a new Vec2 by changing the y coordinate.
         '''
-        return Vec2(self.x, float(y))
+        return Vec2(self.x, _checkFloatType(y))
 
     def normalize(self) -> Vec2:
         '''
@@ -652,7 +675,9 @@ class Vec2:
         if not math.isfinite(thetaRad):
             raise OverflowError(f'Vec2 rotation angle not finite: {thetaRad!r}')
         s,c = sincosRad(thetaRad)
-        return Vec2(self.x*c - self.y*s, self.x*s + self.y*c)
+        rX = math.fma(self.x, c, -self.y*s)
+        rY = math.fma(self.x, s, self.y*c)
+        return _checkOverflowVec2(rX,rY)
 
     def rotateDeg(self, thetaDeg: float) -> Vec2:
         '''
