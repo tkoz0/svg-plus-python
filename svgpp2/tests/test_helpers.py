@@ -1,3 +1,6 @@
+'''
+Tests for helper functions.
+'''
 
 from svgpp2.helpers import formatNumber, numberFormatter, sincosRad, sincosDeg
 from svgpp2.helpers import _checkFloat, _checkTol, _checkTolAndScale
@@ -7,261 +10,178 @@ import pytest
 
 class TestCheckFloats:
 
-    @pytest.mark.parametrize(('num',),[
-        (True,),
-        (False,),
-        ('',),
-        ('0',),
-        ('3.6',),
-        ('-5.8',)
-    ])
-    def testTypeError(self, num):
-        with pytest.raises(TypeError):
-            _checkFloat(num)
+    def testTypeError(self):
+        for value in (True,False,'','0','3.6','-5.8'):
+            with pytest.raises(TypeError):
+                _checkFloat(value) # type:ignore
 
-    @pytest.mark.parametrize(('num',),[
-        (math.inf,),
-        (-math.inf,),
-        (math.nan,)
-    ])
-    def testValueError(self, num):
-        with pytest.raises(ValueError):
-            _checkFloat(num)
+    def testValueError(self):
+        for value in (math.inf,-math.inf,math.nan):
+            with pytest.raises(ValueError):
+                _checkFloat(value)
 
-    @pytest.mark.parametrize(('num',),[
-        (0,),
-        (-5,),
-        (1.1,),
-        (-6.0,)
-    ])
-    def testValid(self, num):
-        assert _checkFloat(num) == num
+    def testValid(self):
+        for value in (0,-5,1.1,-6.0):
+            assert _checkFloat(value) == value
 
     # pathological size numbers
-    @pytest.mark.parametrize(('num',),[
-        (10**400,),
-        (-10**500,)
-    ])
-    def testOverflowError(self, num):
-        with pytest.raises(OverflowError):
-            _checkFloat(num)
+    def testOverflowError(self):
+        for value in (10**400,-10**500):
+            with pytest.raises(OverflowError):
+                _checkFloat(value)
 
 class TestCheckTol:
 
-    @pytest.mark.parametrize(('tol',),[
-        ('a',),
-        ('False',),
-        ('True',),
-        (False,),
-        (True,),
-        ('0.1',),
-        ('',)
-    ])
-    def testTypeError(self, tol):
-        with pytest.raises(TypeError):
-            _checkTol(tol)
+    def testTypeError(self):
+        for tol in ('a','False','True',False,True,'0.1',''):
+            with pytest.raises(TypeError):
+                _checkTol(tol) # type:ignore
 
-    @pytest.mark.parametrize(('tol',),[
-        (-1,),
-        (-2.0,),
-        (math.inf,),
-        (math.nan,),
-        (-math.inf,),
-        (-42,)
-    ])
-    def testValueError(self, tol):
-        with pytest.raises(ValueError):
-            _checkTol(tol)
+    def testValueError(self):
+        for tol in (-1,-2.0,math.inf,math.nan,-math.inf,-42,-1e-6):
+            with pytest.raises(ValueError):
+                _checkTol(tol)
 
-    @pytest.mark.parametrize(('tol',),[
-        (0.0,),
-        (1e-300,),
-        (1e-30,),
-        (1e-15,),
-        (1e-9,),
-        (1e-6,),
-        (1e-3,),
-        (1.0,),
-        (1e3,),
-        (1e6,),
-        (-0.0,),
-        (0,),
-        (1,),
-        (1000,)
-    ])
-    def testValid(self, tol):
-        assert _checkTol(tol) == tol
+    def testValid(self):
+        for tol in (0.0,1e-300,1e-30,1e-15,1e-9,1e-6,1e-3,1.0,1e3,1e6,-0.0,0,1,1000):
+            assert _checkTol(tol) == tol
 
 class TestCheckTolAndScale:
 
-    @pytest.mark.parametrize(('tol','scale'),[
-        (False,'a'),
-        ('b',True),
-        (True,True),
-        ('0','0'),
-        ('','')
-    ])
-    def testTypeError(self, tol, scale):
-        with pytest.raises(TypeError):
-            _checkTolAndScale(tol,scale)
+    def testTypeError(self):
+        for tol,scale in (
+            (False,'a'),
+            ('b',True),
+            (True,True),
+            ('0','0'),
+            ('','')
+        ):
+            with pytest.raises(TypeError):
+                _checkTolAndScale(tol,scale) # type:ignore
 
-    @pytest.mark.parametrize(('tol','scale'),[
-        (-0.1,0.1),
-        (0.1,-0.1),
-        (-1,1),
-        (1,-1),
-        (math.nan,1e-9),
-        (1e-9,-math.inf),
-        (math.inf,math.inf)
-    ])
-    def testValueError(self, tol, scale):
-        with pytest.raises(ValueError):
-            _checkTolAndScale(tol,scale)
+    def testValueError(self):
+        for tol,scale in (
+            (-0.1,0.1),
+            (0.1,-0.1),
+            (-1,1),
+            (1,-1),
+            (math.nan,1e-9),
+            (1e-9,-math.inf),
+            (math.inf,math.inf)
+        ):
+            with pytest.raises(ValueError):
+                _checkTolAndScale(tol,scale)
 
-    @pytest.mark.parametrize(('tol','scale'),[
-        (0.0,0.0),
-        (0,0),
-        (1,0.3),
-        (1e-9,42),
-        (1e-300,1e300),
-        (1e-9,1e-9),
-        (1e-12,1e-3),
-        (0.0,1e-6),
-        (1e-12,0),
-        (1,0.1)
-    ])
-    def testValid(self, tol, scale):
-        assert _checkTolAndScale(tol,scale) == (tol,scale)
+    def testValid(self):
+        for tol,scale in (
+            (0.0,0.0),
+            (0,0),
+            (1,0.3),
+            (1e-9,42),
+            (1e-300,1e300),
+            (1e-9,1e-9),
+            (1e-12,1e-9),
+            (0.0,1e-6),
+            (1e-12,0),
+            (1,0.1)
+        ):
+            assert _checkTolAndScale(tol,scale) == (tol,scale)
 
 class TestFormatNumber:
 
-    @pytest.mark.parametrize(('num',),[
-        ('',),
-        (True,),
-        (False,),
-        ('-5.5',),
-        ('0',),
-        ('1.0',)
-    ])
-    def testNumTypeError(self, num):
-        with pytest.raises(TypeError):
-            formatNumber(num)
+    def testNumTypeError(self):
+        for num in ('',True,False,'-5.5','0','1.0'):
+            with pytest.raises(TypeError):
+                formatNumber(num) # type:ignore
 
-    @pytest.mark.parametrize(('num',),[
-        (math.inf,),
-        (-math.inf,),
-        (math.nan,)
-    ])
-    def testNumValueError(self, num):
-        with pytest.raises(ValueError):
-            formatNumber(num)
+    def testNumValueError(self):
+        for num in (math.inf,-math.inf,math.nan):
+            with pytest.raises(ValueError):
+                formatNumber(num)
 
-    @pytest.mark.parametrize(('prec',),[
-        (True,),
-        (False,),
-        ('',),
-        ('1',),
-        (0.1,)
-    ])
-    def testPrecTypeError(self, prec):
-        with pytest.raises(TypeError):
-            formatNumber(0.0,prec)
+    def testPrecTypeError(self):
+        for prec in (True,False,'','1',0.1):
+            with pytest.raises(TypeError):
+                formatNumber(0.0,prec) # type:ignore
 
-    @pytest.mark.parametrize(('prec',),[
-        (-1,),
-        (-2,)
-    ])
-    def testPrecValueError(self, prec):
-        with pytest.raises(ValueError):
-            formatNumber(0.0,prec)
+    def testPrecValueError(self):
+        for prec in (-1,-2):
+            with pytest.raises(ValueError):
+                formatNumber(0.0,prec)
 
-    @pytest.mark.parametrize(('removeZeroes',),[
-        (2,),
-        (3,),
-        (-1.1,),
-        (1.0,),
-        ('',),
-        ('1',)
-    ])
-    def testRemoveZeroesTypeError(self, removeZeroes):
-        with pytest.raises(TypeError):
-            formatNumber(0.0,removeTrailingZeroes=removeZeroes)
+    def testRemoveZeroesTypeError(self):
+        for removeZeroes in (2,3,-1.1,1.0,'','1','True','False'):
+            with pytest.raises(TypeError):
+                formatNumber(0.0,removeTrailingZeroes=removeZeroes) # type:ignore
 
-    @pytest.mark.parametrize(('num','result'),[
-        (0.0,'0.0'),
-        (-0.0,'0.0'),
-        (3.14,'3.14'),
-        (-0.01,'-0.01'),
-        (0.00009,'9e-05'),
-        (0.0001,'0.0001'),
-        (999.999,'999.999'),
-        (3.141592653589793,'3.141592653589793'),
-        (-0.000001,'-1e-06'),
-        (-1e-12,'-1e-12'),
-        (9e15,'9000000000000000.0'),
-        (1e16,'1e+16'),
-        (7,'7.0'),
-        (-42,'-42.0')
-    ])
-    def testDefault(self, num, result):
+    def testDefault(self):
         # default uses str(num) except -0.0 converts to +0.0
-        assert formatNumber(num) == result
+        assert formatNumber(0.0) == '0.0'
+        assert formatNumber(-0.0) == '0.0'
+        assert formatNumber(3.14) == '3.14'
+        assert formatNumber(-0.01) == '-0.01'
+        assert formatNumber(0.00009) == '9e-05'
+        assert formatNumber(0.0001) == '0.0001'
+        assert formatNumber(999.999) == '999.999'
+        assert formatNumber(3.141592653589793) == '3.141592653589793'
+        assert formatNumber(-0.000001) == '-1e-06'
+        assert formatNumber(-1e-12) == '-1e-12'
+        assert formatNumber(9e15) == '9000000000000000.0'
+        assert formatNumber(1e16) == '1e+16'
+        assert formatNumber(7) == '7.0'
+        assert formatNumber(-42) == '-42.0'
+        assert formatNumber(1e307) == '1e+307'
+        assert formatNumber(1e-307) == '1e-307'
 
-    @pytest.mark.parametrize(('num','result'),[
-        (0.0,'0'),
-        (-0.0,'0'),
-        (-9,'-9'),
-        (-9.0,'-9'),
-        (42.0,'42'),
-        (10.0,'10'),
-        (-100,'-100'),
-        (4.2,'4.2'),
-        (-8.1,'-8.1'),
-        (3.1416,'3.1416'),
-        (-42.42,'-42.42')
-    ])
-    def testDefaultRemoveTrailing(self, num, result):
-        assert formatNumber(num,removeTrailingZeroes=True) == result
+    def testDefaultRemoveTrailing(self):
+        for num,result in (
+            (0.0,'0'),
+            (-0.0,'0'),
+            (-9,'-9'),
+            (-9.0,'-9'),
+            (42.0,'42'),
+            (10.0,'10'),
+            (-100,'-100'),
+            (4.2,'4.2'),
+            (-8.1,'-8.1'),
+            (3.1416,'3.1416'),
+            (-42.42,'-42.42')
+        ):
+            assert formatNumber(num,removeTrailingZeroes=True) == result
 
-    @pytest.mark.parametrize(('num','prec','result'),[
-        (5.0,0,'5'),
-        (6.1,0,'6'),
-        (6.9,0,'7'),
-        (0.4,0,'0'),
-        (-0.4,0,'0'),
-        (1.5,0,'2'),
-        (2.5,0,'2'),
-        (42,0,'42'),
-        (-5.89,1,'-5.9'),
-        (-5.99,1,'-6.0'),
-        (42.42,1,'42.4'),
-        (18,1,'18.0'),
-        (1.333,2,'1.33'),
-        (1.667,2,'1.67'),
-        (-0.003,2,'0.00'),
-        (0.007,2,'0.01'),
-        (0.0001,2,'0.00'),
-        (2.71828,3,'2.718'),
-        (-1.05946,3,'-1.059'),
-        (1010.7179,3,'1010.718'),
-        (-996.1604,3,'-996.160'),
-        (0.0001,3,'0.000')
-    ])
-    def testPrecision(self, num, prec, result):
-        assert formatNumber(num,prec) == result
+    def testPrecision(self):
+        assert formatNumber(5.0,0) == '5'
+        assert formatNumber(6.1,0) == '6'
+        assert formatNumber(6.9,0) == '7'
+        assert formatNumber(0.4,0) == '0'
+        assert formatNumber(-0.4,0) == '0'
+        assert formatNumber(1.5,0) == '2'
+        assert formatNumber(2.5,0) == '2'
+        assert formatNumber(42,0) == '42'
+        assert formatNumber(-5.89,1) == '-5.9'
+        assert formatNumber(-5.99,1) == '-6.0'
+        assert formatNumber(42.42,1) == '42.4'
+        assert formatNumber(18,1) == '18.0'
+        assert formatNumber(1.333,2) == '1.33'
+        assert formatNumber(1.667,2) == '1.67'
+        assert formatNumber(-0.003,2) == '0.00'
+        assert formatNumber(0.007,2) == '0.01'
+        assert formatNumber(0.0001,2) == '0.00'
+        assert formatNumber(2.71828,3) == '2.718'
+        assert formatNumber(-1.05946,3) == '-1.059'
+        assert formatNumber(1010.7179,3) == '1010.718'
+        assert formatNumber(-996.1604,3) == '-996.160'
+        assert formatNumber(0.0001,3) == '0.000'
 
-    @pytest.mark.parametrize(('num','prec','result'),[
-        (5,1,'5'),
-        (89,1,'89'),
-        (-62.0,2,'-62'),
-        (-62.13,2,'-62.13'),
-        (-62.503,2,'-62.5'),
-        (123.4,3,'123.4'),
-        (123.456,3,'123.456'),
-        (123,3,'123')
-    ])
-    def testPrecisionRemoveTrailing(self, num, prec, result):
-        assert formatNumber(num,prec,True) == result
+    def testPrecisionRemoveTrailing(self):
+        assert formatNumber(5,1,True) == '5'
+        assert formatNumber(89,1,True) == '89'
+        assert formatNumber(-62.0,2,True) == '-62'
+        assert formatNumber(-62.13,2,True) == '-62.13'
+        assert formatNumber(-62.503,2,True) == '-62.5'
+        assert formatNumber(123.4,3,True) == '123.4'
+        assert formatNumber(123.456,3,True) == '123.456'
+        assert formatNumber(123,3,True) == '123'
 
     def testNegativeZero(self):
         assert formatNumber(-0.0) == '0.0'
