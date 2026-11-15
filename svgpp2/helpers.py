@@ -14,7 +14,7 @@ __all__ = [
 
 def _checkFloat(num: float) -> float:
     '''
-    Return nums converted to floats.
+    Return num converted to float.
     Raises TypeError if not a number convertible to float (includes bool).
     Raises ValueError if it is inf or nan.
     '''
@@ -46,7 +46,7 @@ def _checkTolAndScale(tol: float, scale: float, /) -> tuple[float,float]:
     if isinstance(tol,bool) or not isinstance(tol,(int,float)):
         raise TypeError(f'tol must be a number (int or float), not {type(tol).__name__}')
     if isinstance(scale,bool) or not isinstance(scale,(int,float)):
-        raise TypeError(f'scale must be a number (int or float), not {type(tol).__name__}')
+        raise TypeError(f'scale must be a number (int or float), not {type(scale).__name__}')
     tol = float(tol)
     scale = float(scale)
     if not math.isfinite(tol) or tol < 0.0:
@@ -61,7 +61,7 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: b
 
     Precision supported:
     - None: to use python default (shortest round trip)
-    - int: number of digits after decimal point (must be >= 0)
+    - int: number of digits after decimal point (must be >= 0, capped to 100)
 
     Trailing zeroes may be removed as well.
 
@@ -87,13 +87,15 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: b
         raise TypeError(f'precision must be an int, not {type(precision).__name__}')
     elif precision < 0:
         raise ValueError(f'precision must be an int >= 0, not {precision!r}')
+    elif precision > 100:
+        raise OverflowError(f'precision cannot be over 100 to prevent resource overuse')
     else:
         result = f'{num:.{precision}f}'
 
     # handle trailing zeroes
     if not isinstance(removeTrailingZeroes,bool):
         raise TypeError(f'removeTrailingZeroes must be a bool')
-    if removeTrailingZeroes and '.' in result:
+    if removeTrailingZeroes and '.' in result and 'e' not in result:
         result = result.rstrip('0').rstrip('.')
     # possible we end up with -0 depending on precision if number is negative
     # normalize all forms: -0, -0.0, -0.00, etc
@@ -122,10 +124,12 @@ def sincosRad(angleRad: float) -> tuple[float,float]:
     '''
     Simultaneously compute sine and cosine. Angle is in radians.
     '''
+    angleRad = _checkFloat(angleRad)
     return (math.sin(angleRad),math.cos(angleRad))
 
 def sincosDeg(angleDeg: float) -> tuple[float,float]:
     '''
     Simultaneously compute sine and cosine. Angle is in degrees.
     '''
+    angleDeg = _checkFloat(angleDeg)
     return sincosRad(math.radians(angleDeg))

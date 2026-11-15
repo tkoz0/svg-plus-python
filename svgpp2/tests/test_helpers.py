@@ -149,6 +149,18 @@ class TestFormatNumber:
         ):
             assert formatNumber(num,removeTrailingZeroes=True) == result
 
+    def testDefaultRemoveTrailingWithExponent(self):
+        # ensure exponent zeroes are not removed
+        for num,result in (
+            (1e20,'1e+20'),
+            (1.23e120,'1.23e+120'),
+            (4.56e300,'4.56e+300'),
+            (8.2e-10,'8.2e-10'),
+            (5.41e-140,'5.41e-140'),
+            (1e-200,'1e-200')
+        ):
+            assert formatNumber(num,removeTrailingZeroes=True) == result
+
     def testPrecision(self):
         assert formatNumber(5.0,0) == '5'
         assert formatNumber(6.1,0) == '6'
