@@ -15,7 +15,7 @@ __all__ = [
 def _checkFloat(num: float) -> float:
     '''
     Return num converted to float.
-    Raises TypeError if not a number convertible to float (includes bool).
+    Raises TypeError if num is not an int or float.
     Raises ValueError if it is inf or nan.
     '''
     if isinstance(num,bool) or not isinstance(num,(int,float)):
@@ -70,10 +70,8 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: b
     prefer familiar numbers like 1-100.
     '''
     # validate input num
-    if isinstance(num,bool):
-        raise TypeError('num should be a number, not a bool')
-    if not isinstance(num,(int,float)):
-        raise TypeError('num should be a number (int or float)')
+    if isinstance(num,bool) or not isinstance(num,(int,float)):
+        raise TypeError(f'num should be a number (int or float), not {type(num).__name__}')
     num = float(num)
     if not math.isfinite(num):
         raise ValueError(f'invalid number for SVG: {num}')
@@ -88,7 +86,7 @@ def formatNumber(num: float, precision: int|None = None, removeTrailingZeroes: b
     elif precision < 0:
         raise ValueError(f'precision must be an int >= 0, not {precision!r}')
     elif precision > 100:
-        raise OverflowError(f'precision cannot be over 100 to prevent resource overuse')
+        raise ValueError(f'precision cannot be over 100 to prevent resource overuse')
     else:
         result = f'{num:.{precision}f}'
 
